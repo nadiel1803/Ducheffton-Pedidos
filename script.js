@@ -17,6 +17,7 @@ const pedidosContainer = document.getElementById('pedidosContainer');
 const entregaSelect = document.getElementById('entrega');
 const enderecoContainer = document.getElementById('enderecoContainer');
 const submitBtn = document.getElementById('submitBtn');
+const ordenarSelect = document.getElementById('ordenarHorario');
 
 let editId = null;
 const pedidosColRef = collection(db, "pedidos");
@@ -45,18 +46,7 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
-/* Modal open/close com confirmação se dirty */
-
-
-
-
-
-
-
-
-
-
-
+/* Modal */
 function openModalForNew() {
   modal.style.display = 'block';
   resetFormAndDirty();
@@ -67,7 +57,6 @@ function openModalForNew() {
 function openModalForEdit() {
   modal.style.display = 'block';
   clearDirty();
-
 }
 
 async function tryCloseModal() {
@@ -84,7 +73,6 @@ async function tryCloseModal() {
     editId = null;
     return true;
   }
-
   return false;
 }
 
@@ -93,36 +81,13 @@ closeModalBtn.addEventListener('click', async () => await tryCloseModal());
 window.addEventListener('click', async (e) => { if (e.target === modal) await tryCloseModal(); });
 window.addEventListener('keydown', async (e) => { if (e.key === 'Escape' && modal.style.display === 'block') await tryCloseModal(); });
 
-/* marcar dirty ao alterar campos */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* marcar dirty */
 [...form.querySelectorAll('input, textarea, select')].forEach(el => {
   el.addEventListener('input', markDirty);
   el.addEventListener('change', markDirty);
 });
 
-/* mostrar/ocultar endereço e marcar dirty */
-
-
-
+/* mostrar/ocultar endereço */
 entregaSelect.addEventListener('change', () => {
   enderecoContainer.style.display = entregaSelect.value === 'Sim' ? 'block' : 'none';
   markDirty();
@@ -148,16 +113,12 @@ form.addEventListener('submit', async (e) => {
     pago: safeString(document.getElementById('pago').value)
   };
 
-  console.log('Tentando salvar/atualizar pedido:', pedido);
-
   try {
     if (editId) {
       await updateDoc(doc(db, "pedidos", editId), pedido);
-      console.log('Pedido atualizado:', editId);
       editId = null;
     } else {
-      const docRef = await addDoc(pedidosColRef, pedido);
-      console.log('Pedido adicionado com ID:', docRef.id);
+      await addDoc(pedidosColRef, pedido);
     }
 
     resetFormAndDirty();
@@ -167,7 +128,7 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-/* Função de impressão - abre nova janela com layout 80mm e manda window.print() */
+/* impressão */
 function printReceipt(docSnap) {
   const raw = docSnap.data() || {};
   const p = {
@@ -223,7 +184,6 @@ function printReceipt(docSnap) {
       <div class="small">Pago: ${escapeHtml(p.pago)}</div>
       <hr>
       <div class="center small">Obrigado! Volte sempre :)</div>
-
       <script>
         window.onload = function() {
           setTimeout(() => {
@@ -246,22 +206,15 @@ function printReceipt(docSnap) {
   w.document.close();
 }
 
-/* criar card com botões Editar, Imprimir e Excluir */
+/* criar card */
 function criarCard(docSnap) {
   const raw = docSnap.data() || {};
-  if (raw.valor === undefined) {
-    console.warn(`Documento ${docSnap.id} não tem campo 'valor' definido. Usando 0 como fallback.`);
-  }
-
   const p = {
     nome: safeString(raw.nome) || '—',
     data: safeString(raw.data) || '—',
     horario: safeString(raw.horario) || '—',
     itens: safeString(raw.itens) || '—',
     valor: (() => { const n = Number(raw.valor); return Number.isFinite(n) ? n : 0; })(),
-
-
-
     pago: safeString(raw.pago) || '—',
     entrega: safeString(raw.entrega) || 'Não',
     endereco: safeString(raw.endereco) || ''
@@ -285,7 +238,6 @@ function criarCard(docSnap) {
   btnEditar.className = 'btnEditar';
   btnEditar.textContent = '✏️ Editar';
   btnEditar.addEventListener('click', () => {
-
     document.getElementById('nome').value = raw.nome || '';
     document.getElementById('data').value = raw.data || '';
     document.getElementById('numero').value = raw.numero || '';
@@ -300,7 +252,7 @@ function criarCard(docSnap) {
     enderecoContainer.style.display = raw.entrega === 'Sim' ? 'block' : 'none';
     editId = docSnap.id;
     submitBtn.textContent = 'Atualizar Pedido';
-    clearDirty(); // campos preenchidos programaticamente
+    clearDirty();
     openModalForEdit();
   });
 
@@ -320,7 +272,6 @@ function criarCard(docSnap) {
     try {
       if (confirm('Tem certeza que quer excluir este pedido?')) {
         await deleteDoc(doc(db, "pedidos", docSnap.id));
-        console.log('Pedido excluído:', docSnap.id);
       }
     } catch (err) {
       logAndAlertError(err, 'excluir pedido');
@@ -335,10 +286,25 @@ function criarCard(docSnap) {
   return card;
 }
 
-/* onSnapshot em tempo real */
-onSnapshot(pedidosColRef, (snapshot) => {
+/* ---- ORDENAÇÃO ---- */
+let pedidosCache = []; // guarda docs
+function renderPedidos() {
   pedidosContainer.innerHTML = '';
-  snapshot.forEach((docSnap) => {
+
+  const ordem = ordenarSelect.value;
+  const pedidosOrdenados = [...pedidosCache].sort((a, b) => {
+    const horaA = a.data().horario || '';
+    const horaB = b.data().horario || '';
+    if (!horaA && !horaB) return 0;
+    if (!horaA) return 1;
+    if (!horaB) return -1;
+
+    return ordem === 'asc'
+      ? horaA.localeCompare(horaB)
+      : horaB.localeCompare(horaA);
+  });
+
+  pedidosOrdenados.forEach(docSnap => {
     try {
       const card = criarCard(docSnap);
       pedidosContainer.appendChild(card);
@@ -346,6 +312,15 @@ onSnapshot(pedidosColRef, (snapshot) => {
       console.error('Erro ao renderizar doc', docSnap.id, e);
     }
   });
+}
+
+ordenarSelect.addEventListener('change', renderPedidos);
+
+/* snapshot em tempo real */
+onSnapshot(pedidosColRef, (snapshot) => {
+  pedidosCache = [];
+  snapshot.forEach((docSnap) => pedidosCache.push(docSnap));
+  renderPedidos();
 }, (err) => {
   logAndAlertError(err, 'carregar pedidos (onSnapshot)');
 });
