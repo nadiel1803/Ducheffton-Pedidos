@@ -8,6 +8,7 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+/* DOM */
 const modal = document.getElementById('modal');
 const abrirModalBtn = document.getElementById('abrirModal');
 const closeModalBtn = document.querySelector('.close');
@@ -20,48 +21,40 @@ const submitBtn = document.getElementById('submitBtn');
 let editId = null;
 const pedidosColRef = collection(db, "pedidos");
 
-// FLAG que indica se o formulário foi alterado desde a última limpeza/salvamento
+/* Dirty flag */
 let isDirty = false;
+function markDirty() { isDirty = true; }
+function clearDirty() { isDirty = false; }
+function resetFormAndDirty() { form.reset(); enderecoContainer.style.display = 'none'; clearDirty(); }
 
-// ---------------- Helpers ----------------
+/* Helpers */
 function logAndAlertError(err, where = '') {
   console.error(`Erro${where ? ' em ' + where : ''}:`, err);
   alert('Ocorreu um erro (veja console).');
 }
-
 function safeString(value) {
   return (value === undefined || value === null) ? '' : String(value);
 }
-
-function markDirty() {
-  isDirty = true;
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
-function clearDirty() {
-  isDirty = false;
-}
-
-// Reseta o form e limpa flag
-function resetFormAndDirty() {
-  form.reset();
-  enderecoContainer.style.display = 'none';
-  clearDirty();
-}
-
-// ---------------- Modal open/close com confirmação ----------------
+/* Modal open/close com confirmação se dirty */
 function openModalForNew() {
   modal.style.display = 'block';
   resetFormAndDirty();
   submitBtn.textContent = 'Adicionar Pedido';
   editId = null;
 }
-
 function openModalForEdit() {
   modal.style.display = 'block';
-  // não resetar, os campos serão preenchidos antes de abrir pelo fluxo de edição
-  clearDirty(); // marca que naquele momento ainda não tem alterações "novas"
+  clearDirty();
 }
-
 async function tryCloseModal() {
   if (!isDirty) {
     modal.style.display = 'none';
@@ -76,51 +69,27 @@ async function tryCloseModal() {
     editId = null;
     return true;
   }
-  // se escolheu cancelar, mantém o modal aberto
   return false;
 }
 
-// abrir modal (novo)
-abrirModalBtn.addEventListener('click', () => {
-  openModalForNew();
-});
+abrirModalBtn.addEventListener('click', openModalForNew);
+closeModalBtn.addEventListener('click', async () => await tryCloseModal());
+window.addEventListener('click', async (e) => { if (e.target === modal) await tryCloseModal(); });
+window.addEventListener('keydown', async (e) => { if (e.key === 'Escape' && modal.style.display === 'block') await tryCloseModal(); });
 
-// fechar pelo X (verifica dirty)
-closeModalBtn.addEventListener('click', async () => {
-  await tryCloseModal();
-});
-
-// clique fora do modal: agora chama tryCloseModal ao invés de fechar direto
-window.addEventListener('click', async (e) => {
-  if (e.target === modal) {
-    await tryCloseModal();
-  }
-});
-
-// tecla ESC: tenta fechar com confirmação se dirty
-window.addEventListener('keydown', async (e) => {
-  if (e.key === 'Escape' && modal.style.display === 'block') {
-    await tryCloseModal();
-  }
-});
-
-// ---------------- detectar mudanças no form (marcar dirty) ----------------
-// adiciona listener de input/change a todos os controls do formulário
+/* marcar dirty ao alterar campos */
 [...form.querySelectorAll('input, textarea, select')].forEach(el => {
   el.addEventListener('input', markDirty);
   el.addEventListener('change', markDirty);
 });
 
-// quando abrir para edição, a gente vai preencher os campos e resetar a flag de dirty
-// (isso é feito no fluxo de edição abaixo por clearDirty())
-
-// ---------------- Mostrar/ocultar endereço ----------------
+/* mostrar/ocultar endereço e marcar dirty */
 entregaSelect.addEventListener('change', () => {
   enderecoContainer.style.display = entregaSelect.value === 'Sim' ? 'block' : 'none';
   markDirty();
 });
 
-// ---------------- Submit (Adicionar / Atualizar) ----------------
+/* Submit (Adicionar / Atualizar) */
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -159,7 +128,86 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// ---------------- Render seguro (cria card) ----------------
+/* Função de impressão - abre nova janela com layout 80mm e manda window.print() */
+function printReceipt(docSnap) {
+  const raw = docSnap.data() || {};
+  const p = {
+    nome: raw.nome || '',
+    data: raw.data || '',
+    horario: raw.horario || '',
+    itens: raw.itens || '',
+    valor: (Number.isFinite(Number(raw.valor)) ? Number(raw.valor) : 0).toFixed(2),
+    numero: raw.numero || '',
+    pagamento: raw.pagamento || '',
+    entrega: raw.entrega || 'Não',
+    endereco: raw.endereco || '',
+    pago: raw.pago || ''
+  };
+
+  const reciboHTML = `
+  <!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Recibo</title>
+      <style>
+        @page { size: 80mm auto; margin: 0; }
+        body {
+          font-family: monospace;
+          margin: 6px;
+          color: #000;
+          background: #fff;
+          font-size: 12px;
+          line-height: 1.2;
+        }
+        .center { text-align:center; }
+        .bold { font-weight:700; }
+        hr { border:0; border-top:1px dashed #000; margin:6px 0; }
+        .items { margin-top:6px; white-space: pre-wrap; font-size:11px; }
+        .small { font-size:11px; }
+        .right { text-align:right; }
+      </style>
+    </head>
+    <body>
+      <div class="center bold">DuCheffton</div>
+      <div class="center small">Pedido - Recibo</div>
+      <hr>
+      <div><strong>Cliente:</strong> ${escapeHtml(p.nome)}</div>
+      <div><strong>Data:</strong> ${escapeHtml(p.data)}  <strong>Hora:</strong> ${escapeHtml(p.horario)}</div>
+      <div><strong>Nº:</strong> ${escapeHtml(p.numero)}  <strong>Pag:</strong> ${escapeHtml(p.pagamento)}</div>
+      <div><strong>Entrega:</strong> ${escapeHtml(p.entrega)}</div>
+      ${p.entrega === 'Sim' ? `<div><strong>Endereço:</strong> ${escapeHtml(p.endereco)}</div>` : ''}
+      <hr>
+      <div class="items">${escapeHtml(p.itens)}</div>
+      <hr>
+      <div class="right bold">TOTAL: R$ ${p.valor}</div>
+      <div class="small">Pago: ${escapeHtml(p.pago)}</div>
+      <hr>
+      <div class="center small">Obrigado! Volte sempre :)</div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(() => {
+            window.print();
+            setTimeout(() => { window.close(); }, 600);
+          }, 200);
+        };
+      </script>
+    </body>
+  </html>
+  `;
+
+  const w = window.open('', '_blank', 'width=350,height=700');
+  if (!w) {
+    alert('Pop-up bloqueado. Libere pop-ups para este site para permitir impressão automática.');
+    return;
+  }
+  w.document.open();
+  w.document.write(reciboHTML);
+  w.document.close();
+}
+
+/* criar card com botões Editar, Imprimir e Excluir */
 function criarCard(docSnap) {
   const raw = docSnap.data() || {};
   if (raw.valor === undefined) {
@@ -171,10 +219,7 @@ function criarCard(docSnap) {
     data: safeString(raw.data) || '—',
     horario: safeString(raw.horario) || '—',
     itens: safeString(raw.itens) || '—',
-    valor: (function(){
-      const n = Number(raw.valor);
-      return Number.isFinite(n) ? n : 0;
-    })(),
+    valor: (() => { const n = Number(raw.valor); return Number.isFinite(n) ? n : 0; })(),
     pago: safeString(raw.pago) || '—',
     entrega: safeString(raw.entrega) || 'Não',
     endereco: safeString(raw.endereco) || ''
@@ -190,12 +235,14 @@ function criarCard(docSnap) {
     <p>${p.entrega === 'Sim' ? 'Entrega: ' + p.endereco : 'Retirada'}</p>
   `;
 
-  // editar
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+
+  /* Editar */
   const btnEditar = document.createElement('button');
   btnEditar.className = 'btnEditar';
   btnEditar.textContent = '✏️ Editar';
   btnEditar.addEventListener('click', () => {
-    // preenche campos com raw (não p, pra manter os tipos originais)
     document.getElementById('nome').value = raw.nome || '';
     document.getElementById('data').value = raw.data || '';
     document.getElementById('numero').value = raw.numero || '';
@@ -210,11 +257,19 @@ function criarCard(docSnap) {
     enderecoContainer.style.display = raw.entrega === 'Sim' ? 'block' : 'none';
     editId = docSnap.id;
     submitBtn.textContent = 'Atualizar Pedido';
-    clearDirty(); // limpamos a flag porque acabamos de preencher os campos programaticamente
+    clearDirty(); // campos preenchidos programaticamente
     openModalForEdit();
   });
 
-  // excluir
+  /* Imprimir */
+  const btnImprimir = document.createElement('button');
+  btnImprimir.className = 'btnImprimir';
+  btnImprimir.textContent = '🖨️ Imprimir';
+  btnImprimir.addEventListener('click', () => {
+    printReceipt(docSnap);
+  });
+
+  /* Excluir */
   const btnExcluir = document.createElement('button');
   btnExcluir.className = 'btnExcluir';
   btnExcluir.textContent = '🗑️ Excluir';
@@ -229,12 +284,15 @@ function criarCard(docSnap) {
     }
   });
 
-  card.appendChild(btnEditar);
-  card.appendChild(btnExcluir);
+  actions.appendChild(btnEditar);
+  actions.appendChild(btnImprimir);
+  actions.appendChild(btnExcluir);
+  card.appendChild(actions);
+
   return card;
 }
 
-// ---------------- onSnapshot em tempo real ----------------
+/* onSnapshot em tempo real */
 onSnapshot(pedidosColRef, (snapshot) => {
   pedidosContainer.innerHTML = '';
   snapshot.forEach((docSnap) => {

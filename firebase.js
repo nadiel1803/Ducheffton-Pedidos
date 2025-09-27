@@ -11,4 +11,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+console.log('Firebase inicializado:', app.name || '(default)');
 export const db = getFirestore(app);
+console.log('Firestore pronto:', db ? 'ok' : 'db undefined');
