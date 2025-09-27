@@ -17,6 +17,7 @@ const submitBtn = document.getElementById('submitBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 const formTitle = document.getElementById('formTitle');
 const ordenarSelect = document.getElementById('ordenarHorario');
+const navegacaoDiasContainer = document.getElementById('navegacaoDiasContainer');
 
 let editId = null;
 const pedidosColRef = collection(db, "pedidos");
@@ -42,7 +43,7 @@ function escapeHtml(str) {
 
 function formatarDataParaExibicao(dataString) {
     if (!dataString || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
-        return "Data Inválida";
+        return "Sem Data";
     }
     const [ano, mes, dia] = dataString.split('-');
     const dataObj = new Date(ano, mes - 1, dia);
@@ -51,7 +52,7 @@ function formatarDataParaExibicao(dataString) {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-        timeZone: 'UTC' // Importante para evitar problemas de fuso
+        timeZone: 'UTC'
     });
 }
 
@@ -62,17 +63,15 @@ function resetForm() {
     editId = null;
     submitBtn.textContent = 'Adicionar Pedido';
     formTitle.textContent = 'Adicionar Novo Pedido';
-    cancelBtn.style.display = 'none'; // Esconde o botão de cancelar
+    cancelBtn.style.display = 'none';
 }
 
-// Evento para o botão de cancelar edição
 cancelBtn.addEventListener('click', () => {
     if (confirm('Tem certeza que deseja cancelar a edição? As alterações serão perdidas.')) {
         resetForm();
     }
 });
 
-/* mostrar/ocultar endereço */
 entregaSelect.addEventListener('change', () => {
   enderecoContainer.style.display = entregaSelect.value === 'Sim' ? 'block' : 'none';
 });
@@ -109,7 +108,7 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-/* impressão (código idêntico ao seu) */
+/* impressão */
 function printReceipt(docSnap) {
   const raw = docSnap.data() || {};
   const p = {
@@ -227,8 +226,8 @@ function criarCard(docSnap) {
     editId = docSnap.id;
     submitBtn.textContent = 'Atualizar Pedido';
     formTitle.textContent = `Editando Pedido de ${raw.nome}`;
-    cancelBtn.style.display = 'inline-block'; // Mostra o botão de cancelar
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // Rola a página para o topo
+    cancelBtn.style.display = 'inline-block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   /* Imprimir */
@@ -259,13 +258,13 @@ function criarCard(docSnap) {
   return card;
 }
 
-/* ---- NOVA LÓGICA DE RENDERIZAÇÃO E ORDENAÇÃO ---- */
+/* Lógica de Renderização e Ordenação */
 let pedidosCache = [];
 
 function renderPedidos() {
   pedidosContainer.innerHTML = '';
+  navegacaoDiasContainer.innerHTML = '';
 
-  // 1. Agrupar pedidos por data
   const pedidosPorData = {};
   pedidosCache.forEach(docSnap => {
     const data = docSnap.data().data || 'Sem Data';
@@ -275,31 +274,40 @@ function renderPedidos() {
     pedidosPorData[data].push(docSnap);
   });
 
-  // 2. Ordenar as datas (da mais recente para a mais antiga)
   const datasOrdenadas = Object.keys(pedidosPorData).sort((a, b) => b.localeCompare(a));
   
+  if (datasOrdenadas.length > 1) {
+    datasOrdenadas.forEach(data => {
+        const [ano, mes, dia] = data.split('-');
+        const dataFormatadaLink = `${dia}/${mes}`;
+        const linkId = `header-${data}`;
+
+        const link = document.createElement('a');
+        link.className = 'dia-link';
+        link.href = `#${linkId}`;
+        link.textContent = dataFormatadaLink;
+        navegacaoDiasContainer.appendChild(link);
+    });
+  }
+
   if (datasOrdenadas.length === 0) {
       pedidosContainer.innerHTML = '<p style="text-align:center; color:#888;">Nenhum pedido registrado ainda.</p>';
       return;
   }
 
-  // 3. Iterar sobre cada dia e renderizar os pedidos
   datasOrdenadas.forEach(data => {
-    // Só renderiza o dia se houver pedidos para ele
     if (pedidosPorData[data] && pedidosPorData[data].length > 0) {
-      
-      // Cria o cabeçalho do dia
+      const headerId = `header-${data}`;
       const header = document.createElement('h2');
-      header.className = 'data-header'; // Classe para estilização opcional
+      header.className = 'data-header';
+      header.id = headerId;
       header.textContent = formatarDataParaExibicao(data);
       pedidosContainer.appendChild(header);
 
-      // Cria um container grid para os cards deste dia
       const diaContainer = document.createElement('div');
-      diaContainer.className = 'pedidosContainer'; // Reutiliza a classe para o layout de grid
+      diaContainer.className = 'pedidosContainer';
       pedidosContainer.appendChild(diaContainer);
 
-      // Ordena os pedidos *deste dia* de acordo com o seletor
       const ordem = ordenarSelect.value;
       const pedidosDoDiaOrdenados = [...pedidosPorData[data]].sort((a, b) => {
         const horaA = a.data().horario || '';
@@ -309,7 +317,6 @@ function renderPedidos() {
         return ordem === 'asc' ? horaA.localeCompare(horaB) : horaB.localeCompare(horaA);
       });
 
-      // Renderiza os cards ordenados para este dia
       pedidosDoDiaOrdenados.forEach(docSnap => {
         try {
           const card = criarCard(docSnap);
@@ -326,8 +333,8 @@ ordenarSelect.addEventListener('change', renderPedidos);
 
 /* snapshot em tempo real */
 onSnapshot(pedidosColRef, (snapshot) => {
-  pedidosCache = snapshot.docs; // Atualiza o cache com todos os documentos
-  renderPedidos(); // Re-renderiza tudo com a nova lógica
+  pedidosCache = snapshot.docs;
+  renderPedidos();
 }, (err) => {
   logAndAlertError(err, 'carregar pedidos (onSnapshot)');
 });
