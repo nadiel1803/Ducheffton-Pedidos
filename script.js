@@ -9,16 +9,31 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* DOM */
+const modal = document.getElementById('modal');
+const abrirModalBtn = document.getElementById('abrirModal');
+const closeModalBtn = document.querySelector('.close');
 const form = document.getElementById('pedidoForm');
 const pedidosContainer = document.getElementById('pedidosContainer');
 const entregaSelect = document.getElementById('entrega');
 const enderecoContainer = document.getElementById('enderecoContainer');
 const submitBtn = document.getElementById('submitBtn');
+const ordenarSelect = document.getElementById('ordenarHorario');
 
 let editId = null;
 const pedidosColRef = collection(db, "pedidos");
 
+/* Dirty flag */
+let isDirty = false;
+function markDirty() { isDirty = true; }
+function clearDirty() { isDirty = false; }
+function resetFormAndDirty() { form.reset(); enderecoContainer.style.display = 'none'; clearDirty(); }
+
 /* Helpers */
+function logAndAlertError(err, where = '') {
+  console.error(`Erro${where ? ' em ' + where : ''}:`, err);
+  alert('Ocorreu um erro (veja console).');
+}
+
 function safeString(value) {
   return (value === undefined || value === null) ? '' : String(value);
 }
@@ -31,9 +46,51 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
-/* Mostrar/ocultar endereço */
+/* Modal */
+function openModalForNew() {
+  modal.style.display = 'block';
+  resetFormAndDirty();
+  submitBtn.textContent = 'Adicionar Pedido';
+  editId = null;
+}
+
+function openModalForEdit() {
+  modal.style.display = 'block';
+  clearDirty();
+}
+
+async function tryCloseModal() {
+  if (!isDirty) {
+    modal.style.display = 'none';
+    resetFormAndDirty();
+    editId = null;
+    return true;
+  }
+  const ok = confirm('Você tem alterações não salvas. Deseja descartar?');
+  if (ok) {
+    modal.style.display = 'none';
+    resetFormAndDirty();
+    editId = null;
+    return true;
+  }
+  return false;
+}
+
+abrirModalBtn.addEventListener('click', openModalForNew);
+closeModalBtn.addEventListener('click', async () => await tryCloseModal());
+window.addEventListener('click', async (e) => { if (e.target === modal) await tryCloseModal(); });
+window.addEventListener('keydown', async (e) => { if (e.key === 'Escape' && modal.style.display === 'block') await tryCloseModal(); });
+
+/* marcar dirty */
+[...form.querySelectorAll('input, textarea, select')].forEach(el => {
+  el.addEventListener('input', markDirty);
+  el.addEventListener('change', markDirty);
+});
+
+/* mostrar/ocultar endereço */
 entregaSelect.addEventListener('change', () => {
   enderecoContainer.style.display = entregaSelect.value === 'Sim' ? 'block' : 'none';
+  markDirty();
 });
 
 /* Submit (Adicionar / Atualizar) */
@@ -60,19 +117,18 @@ form.addEventListener('submit', async (e) => {
     if (editId) {
       await updateDoc(doc(db, "pedidos", editId), pedido);
       editId = null;
-      submitBtn.textContent = "Adicionar Pedido";
     } else {
       await addDoc(pedidosColRef, pedido);
     }
-    form.reset();
-    enderecoContainer.style.display = "none";
+
+    resetFormAndDirty();
+    modal.style.display = 'none';
   } catch (err) {
-    console.error("Erro ao salvar pedido:", err);
-    alert("Erro ao salvar pedido.");
+    logAndAlertError(err, 'salvar pedido');
   }
 });
 
-/* Impressão */
+/* impressão */
 function printReceipt(docSnap) {
   const raw = docSnap.data() || {};
   const p = {
@@ -96,7 +152,14 @@ function printReceipt(docSnap) {
       <title>Recibo</title>
       <style>
         @page { size: 80mm auto; margin: 0; }
-        body { font-family: monospace; margin: 6px; font-size: 12px; }
+        body {
+          font-family: monospace;
+          margin: 6px;
+          color: #000;
+          background: #fff;
+          font-size: 12px;
+          line-height: 1.2;
+        }
         .center { text-align:center; }
         .bold { font-weight:700; }
         hr { border:0; border-top:1px dashed #000; margin:6px 0; }
@@ -110,8 +173,8 @@ function printReceipt(docSnap) {
       <div class="center small">Pedido - Recibo</div>
       <hr>
       <div><strong>Cliente:</strong> ${escapeHtml(p.nome)}</div>
-      <div><strong>Data:</strong> ${escapeHtml(p.data)} <strong>Hora:</strong> ${escapeHtml(p.horario)}</div>
-      <div><strong>Nº:</strong> ${escapeHtml(p.numero)} <strong>Pag:</strong> ${escapeHtml(p.pagamento)}</div>
+      <div><strong>Data:</strong> ${escapeHtml(p.data)}  <strong>Hora:</strong> ${escapeHtml(p.horario)}</div>
+      <div><strong>Nº:</strong> ${escapeHtml(p.numero)}  <strong>Pag:</strong> ${escapeHtml(p.pagamento)}</div>
       <div><strong>Entrega:</strong> ${escapeHtml(p.entrega)}</div>
       ${p.entrega === 'Sim' ? `<div><strong>Endereço:</strong> ${escapeHtml(p.endereco)}</div>` : ''}
       <hr>
@@ -123,17 +186,27 @@ function printReceipt(docSnap) {
       <div class="center small">Obrigado! Volte sempre :)</div>
       <script>
         window.onload = function() {
-          setTimeout(() => { window.print(); window.close(); }, 300);
+          setTimeout(() => {
+            window.print();
+            setTimeout(() => { window.close(); }, 600);
+          }, 200);
         };
       </script>
     </body>
-  </html>`;
+  </html>
+  `;
+
   const w = window.open('', '_blank', 'width=350,height=700');
+  if (!w) {
+    alert('Pop-up bloqueado. Libere pop-ups para este site para permitir impressão automática.');
+    return;
+  }
+  w.document.open();
   w.document.write(reciboHTML);
   w.document.close();
 }
 
-/* Criar card */
+/* criar card */
 function criarCard(docSnap) {
   const raw = docSnap.data() || {};
   const p = {
@@ -150,8 +223,8 @@ function criarCard(docSnap) {
   const card = document.createElement('div');
   card.className = 'cardPedido';
   card.innerHTML = `
-    <h4>${p.nome}</h4>
-    <p><strong>Hora:</strong> ${p.horario}</p>
+    <h3>${p.nome}</h3>
+    <p><strong>Data:</strong> ${p.data} - <strong>Hora:</strong> ${p.horario}</p>
     <p><strong>Itens:</strong> ${p.itens}</p>
     <p><strong>Valor:</strong> R$${p.valor.toFixed(2)} - <strong>Pago:</strong> ${p.pago}</p>
     <p>${p.entrega === 'Sim' ? 'Entrega: ' + p.endereco : 'Retirada'}</p>
@@ -160,11 +233,11 @@ function criarCard(docSnap) {
   const actions = document.createElement('div');
   actions.className = 'actions';
 
-  // Editar
+  /* Editar */
   const btnEditar = document.createElement('button');
   btnEditar.className = 'btnEditar';
   btnEditar.textContent = '✏️ Editar';
-  btnEditar.onclick = () => {
+  btnEditar.addEventListener('click', () => {
     document.getElementById('nome').value = raw.nome || '';
     document.getElementById('data').value = raw.data || '';
     document.getElementById('numero').value = raw.numero || '';
@@ -179,88 +252,69 @@ function criarCard(docSnap) {
     enderecoContainer.style.display = raw.entrega === 'Sim' ? 'block' : 'none';
     editId = docSnap.id;
     submitBtn.textContent = 'Atualizar Pedido';
-  };
+    clearDirty();
+    openModalForEdit();
+  });
 
-  // Imprimir
+  /* Imprimir */
   const btnImprimir = document.createElement('button');
   btnImprimir.className = 'btnImprimir';
   btnImprimir.textContent = '🖨️ Imprimir';
-  btnImprimir.onclick = () => printReceipt(docSnap);
+  btnImprimir.addEventListener('click', () => {
+    printReceipt(docSnap);
+  });
 
-  // Excluir
+  /* Excluir */
   const btnExcluir = document.createElement('button');
   btnExcluir.className = 'btnExcluir';
   btnExcluir.textContent = '🗑️ Excluir';
-  btnExcluir.onclick = async () => {
-    if (confirm('Excluir este pedido?')) {
-      await deleteDoc(doc(db, "pedidos", docSnap.id));
+  btnExcluir.addEventListener('click', async () => {
+    try {
+      if (confirm('Tem certeza que quer excluir este pedido?')) {
+        await deleteDoc(doc(db, "pedidos", docSnap.id));
+      }
+    } catch (err) {
+      logAndAlertError(err, 'excluir pedido');
     }
-  };
+  });
 
-  actions.append(btnEditar, btnImprimir, btnExcluir);
+  actions.appendChild(btnEditar);
+  actions.appendChild(btnImprimir);
+  actions.appendChild(btnExcluir);
   card.appendChild(actions);
 
   return card;
 }
 
-/* Renderização agrupada */
-let pedidosCache = [];
+/* ---- ORDENAÇÃO ---- */
+let pedidosCache = []; // guarda docs
 function renderPedidos() {
   pedidosContainer.innerHTML = '';
 
-  // Agrupar por data
-  const pedidosPorData = {};
-  pedidosCache.forEach(docSnap => {
-    const data = docSnap.data().data || 'Sem data';
-    if (!pedidosPorData[data]) pedidosPorData[data] = [];
-    pedidosPorData[data].push(docSnap);
+  const ordem = ordenarSelect.value;
+  const pedidosOrdenados = [...pedidosCache].sort((a, b) => {
+    const horaA = a.data().horario || '';
+    const horaB = b.data().horario || '';
+    if (!horaA && !horaB) return 0;
+    if (!horaA) return 1;
+    if (!horaB) return -1;
+
+    return ordem === 'asc'
+      ? horaA.localeCompare(horaB)
+      : horaB.localeCompare(horaA);
   });
 
-  Object.keys(pedidosPorData).sort().forEach(data => {
-    const pedidosDoDia = pedidosPorData[data];
-
-    // Container do dia
-    const diaDiv = document.createElement('div');
-    diaDiv.className = 'diaPedidos';
-
-    // Header do dia + select de ordem
-    const header = document.createElement('div');
-    header.className = 'diaHeader';
-
-    const title = document.createElement('h3');
-    title.textContent = data;
-
-    const ordenarSelect = document.createElement('select');
-    ordenarSelect.innerHTML = `
-      <option value="asc">Horário ↑</option>
-      <option value="desc">Horário ↓</option>
-    `;
-
-    header.append(title, ordenarSelect);
-    diaDiv.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.className = 'pedidosGrid';
-
-    function renderGrid() {
-      grid.innerHTML = '';
-      const ordenados = pedidosDoDia.slice().sort((a, b) => {
-        const horaA = a.data().horario || '';
-        const horaB = b.data().horario || '';
-        return ordenarSelect.value === 'asc'
-          ? horaA.localeCompare(horaB)
-          : horaB.localeCompare(horaA);
-      });
-      ordenados.forEach(docSnap => grid.appendChild(criarCard(docSnap)));
+  pedidosOrdenados.forEach(docSnap => {
+    try {
+      const card = criarCard(docSnap);
+      pedidosContainer.appendChild(card);
+    } catch (e) {
+      console.error('Erro ao renderizar doc', docSnap.id, e);
     }
-
-    ordenarSelect.addEventListener('change', renderGrid);
-    renderGrid();
-
-    diaDiv.appendChild(grid);
-    pedidosContainer.appendChild(diaDiv);
   });
 }
+
+ordenarSelect.addEventListener('change', renderPedidos);
 
 /* snapshot em tempo real */
 onSnapshot(pedidosColRef, (snapshot) => {
@@ -268,6 +322,5 @@ onSnapshot(pedidosColRef, (snapshot) => {
   snapshot.forEach((docSnap) => pedidosCache.push(docSnap));
   renderPedidos();
 }, (err) => {
-  console.error("Erro ao carregar pedidos:", err);
-  alert("Erro ao carregar pedidos.");
+  logAndAlertError(err, 'carregar pedidos (onSnapshot)');
 });
