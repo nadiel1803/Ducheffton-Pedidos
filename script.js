@@ -143,6 +143,7 @@ window.imprimirPedido = async (id) => {
           <p><strong>Itens:</strong> ${pedido.itens}</p>
           <p><strong>Valor Final:</strong> R$ ${pedido.valorFinal ? pedido.valorFinal.toFixed(2) : "0,00"}</p>
           <p><strong>Pago:</strong> ${pedido.pago ? "Sim" : "Não"}</p>
+          <p>"Se Deus é por nós, quem será contra nós?" Rm. 8:31</p>
         </div>
       `;
 
