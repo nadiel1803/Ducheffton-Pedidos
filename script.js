@@ -78,16 +78,18 @@ function carregarPedidos() {
       const id = docSnap.id;
 
       const card = document.createElement("div");
-      card.className = "pedido-card";
+      card.className = "cardPedido";
       card.innerHTML = `
         <h3>${pedido.nome}</h3>
         <p><strong>Data:</strong> ${pedido.data}</p>
         <p><strong>Itens:</strong> ${pedido.itens}</p>
         <p><strong>Valor:</strong> R$ ${pedido.valorFinal ? pedido.valorFinal.toFixed(2) : "0,00"}</p>
         <p><strong>Pago:</strong> ${pedido.pago ? "Sim" : "Não"}</p>
-        <button onclick="editarPedido('${id}')">Editar</button>
-        <button onclick="excluirPedido('${id}')">Excluir</button>
-        <button onclick="imprimirPedido('${id}')">🖨 Imprimir</button>
+        <div class="actions">
+          <button class="btnEditar" onclick="editarPedido('${id}')">Editar</button>
+          <button class="btnExcluir" onclick="excluirPedido('${id}')">Excluir</button>
+          <button class="btnImprimir" onclick="imprimirPedido('${id}')">🖨 Imprimir</button>
+        </div>
       `;
       listaPedidos.appendChild(card);
     });
@@ -143,7 +145,9 @@ window.imprimirPedido = async (id) => {
           <p><strong>Itens:</strong> ${pedido.itens}</p>
           <p><strong>Valor Final:</strong> R$ ${pedido.valorFinal ? pedido.valorFinal.toFixed(2) : "0,00"}</p>
           <p><strong>Pago:</strong> ${pedido.pago ? "Sim" : "Não"}</p>
-          <p>"Se Deus é por nós, quem será contra nós?" Rm. 8:31</p>
+          <p style="margin-top:10px; text-align:center; font-weight:bold;">
+            "Se Deus é por nós, quem será contra nós?" Rm. 8:31
+          </p>
         </div>
       `;
 
