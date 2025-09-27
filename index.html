@@ -1,76 +1,45 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DuCheffton Pedidos</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedidos</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Pedidos Registrados</h1>
-    <button id="abrirModal" class="btnAdd">+ Adicionar Pedido</button>
 
-    <div id="pedidosContainer" class="pedidosContainer"></div>
+  <div class="container">
+    <h1>Lista de Pedidos</h1>
+    <button id="btnAdicionar" class="btnAdd">Adicionar Pedido</button>
+
+    <div id="listaPedidos" class="pedidosContainer"></div>
   </div>
 
-  <!-- Modal -->
-  <div id="modal" class="modal" aria-hidden="true">
-    <div class="modalContent" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <span class="close" title="Fechar">&times;</span>
-      <h2 id="modalTitle">Adicionar/Editar Pedido</h2>
-      <form id="pedidoForm">
-        <label>Nome:</label>
-        <input type="text" id="nome" required />
-
-        <label>Data:</label>
-        <input type="date" id="data" required />
-
-        <label>Número do Cliente:</label>
-        <input type="text" id="numero" />
-
-        <label>Forma de Pagamento:</label>
-        <select id="pagamento" required>
-          <option value="">Selecione</option>
+  <!-- Modal para adicionar/editar pedido -->
+  <div id="modalAdicionar" class="modal">
+    <div class="modalContent">
+      <span id="fecharModal" class="close">&times;</span>
+      <form id="formPedido">
+        <input type="text" name="nome" placeholder="Nome do Cliente" required>
+        <input type="date" name="data" required>
+        <input type="text" name="numeroCliente" placeholder="Número do Cliente">
+        <select name="pagamento" required>
+          <option value="">Forma de Pagamento</option>
           <option value="Dinheiro">Dinheiro</option>
           <option value="Cartão">Cartão</option>
-          <option value="PIX">PIX</option>
+          <option value="Pix">Pix</option>
         </select>
-
-        <label>Entrega:</label>
-        <select id="entrega" required>
-          <option value="">Selecione</option>
-          <option value="Sim">Sim</option>
-          <option value="Não">Não</option>
-        </select>
-
-        <div id="enderecoContainer" style="display:none;">
-          <label>Endereço:</label>
-          <input type="text" id="endereco" />
-        </div>
-
-        <label>Itens do Pedido:</label>
-        <textarea id="itens" required></textarea>
-
-        <label>Valor Final:</label>
-        <input type="number" id="valor" step="0.01" required />
-
-        <label>Horário do Pedido:</label>
-        <input type="time" id="horario" required />
-
-        <label>Pago?</label>
-        <select id="pago" required>
-          <option value="">Selecione</option>
-          <option value="Sim">Sim</option>
-          <option value="Não">Não</option>
-        </select>
-
-        <button type="submit" id="submitBtn">Adicionar Pedido</button>
+        <label><input type="checkbox" name="entrega"> Entrega?</label>
+        <input type="text" name="endereco" placeholder="Endereço (se entrega)">
+        <textarea name="itens" placeholder="Itens do pedido" required></textarea>
+        <input type="number" step="0.01" name="valorFinal" placeholder="Valor Final" required>
+        <input type="time" name="horario" required>
+        <label><input type="checkbox" name="pago"> Pedido Pago?</label>
+        <button type="submit">Salvar Pedido</button>
       </form>
     </div>
   </div>
 
-  <script type="module" src="firebase.js"></script>
   <script type="module" src="script.js"></script>
 </body>
 </html>

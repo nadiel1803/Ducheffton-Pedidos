@@ -133,8 +133,8 @@ window.imprimirPedido = async (id) => {
     if (d.id === id) {
       const pedido = d.data();
       const conteudo = `
-        <div class="pedido-impressao">
-          <h2>Pedido #${id}</h2>
+        <div class="pedido-impressao" style="width:80mm; font-size:1.2rem; font-family:monospace;">
+          <h2 style="text-align:center;">Pedido #${id}</h2>
           <p><strong>Nome:</strong> ${pedido.nome}</p>
           <p><strong>Data:</strong> ${pedido.data}</p>
           <p><strong>Horário:</strong> ${pedido.horario}</p>
