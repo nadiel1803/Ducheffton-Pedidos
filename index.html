@@ -8,27 +8,10 @@
 </head>
 <body>
   <div class="container">
-    <h1>Pedidos Registrados</h1>
-    <button id="abrirModal" class="btnAdd">+ Adicionar Pedido</button>
+    <h1>Controle de Pedidos</h1>
 
-    <!-- Filtro de ordenação -->
-    <div class="filtros">
-      <label for="ordenarHorario">Ordenar por horário:</label>
-      <select id="ordenarHorario">
-        <option value="asc">Crescente</option>
-        <option value="desc">Decrescente</option>
-      </select>
-    </div>
-
-    <!-- Aqui entram os cards -->
-    <div id="pedidosContainer" class="pedidosContainer"></div>
-  </div>
-
-  <!-- Modal de cadastro/edição -->
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h2 id="modalTitle">Cadastro de Pedido</h2>
+    <div class="form-section">
+      <h2 id="formTitle">Adicionar Novo Pedido</h2>
       <form id="pedidoForm">
         <label>Nome do Cliente</label>
         <input type="text" id="nome" required>
@@ -71,10 +54,24 @@
           <option value="Não">Não</option>
           <option value="Sim">Sim</option>
         </select>
-
-        <button type="submit" id="submitBtn">Adicionar Pedido</button>
+        
+        <div class="form-actions">
+            <button type="submit" id="submitBtn">Adicionar Pedido</button>
+            <button type="button" id="cancelBtn" style="display: none;">Cancelar Edição</button>
+        </div>
       </form>
     </div>
+
+    <h1 style="margin-top: 2rem;">Pedidos Registrados</h1>
+    <div class="filtros">
+      <label for="ordenarHorario">Ordenar por horário (dentro de cada dia):</label>
+      <select id="ordenarHorario">
+        <option value="asc">Crescente</option>
+        <option value="desc">Decrescente</option>
+      </select>
+    </div>
+
+    <div id="pedidosContainer" class="pedidosContainerGeral"></div>
   </div>
 
   <script type="module" src="script.js"></script>

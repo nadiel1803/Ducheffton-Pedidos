@@ -9,24 +9,17 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* DOM */
-const modal = document.getElementById('modal');
-const abrirModalBtn = document.getElementById('abrirModal');
-const closeModalBtn = document.querySelector('.close');
 const form = document.getElementById('pedidoForm');
 const pedidosContainer = document.getElementById('pedidosContainer');
 const entregaSelect = document.getElementById('entrega');
 const enderecoContainer = document.getElementById('enderecoContainer');
 const submitBtn = document.getElementById('submitBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const formTitle = document.getElementById('formTitle');
 const ordenarSelect = document.getElementById('ordenarHorario');
 
 let editId = null;
 const pedidosColRef = collection(db, "pedidos");
-
-/* Dirty flag */
-let isDirty = false;
-function markDirty() { isDirty = true; }
-function clearDirty() { isDirty = false; }
-function resetFormAndDirty() { form.reset(); enderecoContainer.style.display = 'none'; clearDirty(); }
 
 /* Helpers */
 function logAndAlertError(err, where = '') {
@@ -37,6 +30,7 @@ function logAndAlertError(err, where = '') {
 function safeString(value) {
   return (value === undefined || value === null) ? '' : String(value);
 }
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -46,51 +40,41 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
-/* Modal */
-function openModalForNew() {
-  modal.style.display = 'block';
-  resetFormAndDirty();
-  submitBtn.textContent = 'Adicionar Pedido';
-  editId = null;
+function formatarDataParaExibicao(dataString) {
+    if (!dataString || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+        return "Data Inválida";
+    }
+    const [ano, mes, dia] = dataString.split('-');
+    const dataObj = new Date(ano, mes - 1, dia);
+    return dataObj.toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC' // Importante para evitar problemas de fuso
+    });
 }
 
-function openModalForEdit() {
-  modal.style.display = 'block';
-  clearDirty();
-}
-
-async function tryCloseModal() {
-  if (!isDirty) {
-    modal.style.display = 'none';
-    resetFormAndDirty();
+/* Gerenciamento do Formulário */
+function resetForm() {
+    form.reset();
+    enderecoContainer.style.display = 'none';
     editId = null;
-    return true;
-  }
-  const ok = confirm('Você tem alterações não salvas. Deseja descartar?');
-  if (ok) {
-    modal.style.display = 'none';
-    resetFormAndDirty();
-    editId = null;
-    return true;
-  }
-  return false;
+    submitBtn.textContent = 'Adicionar Pedido';
+    formTitle.textContent = 'Adicionar Novo Pedido';
+    cancelBtn.style.display = 'none'; // Esconde o botão de cancelar
 }
 
-abrirModalBtn.addEventListener('click', openModalForNew);
-closeModalBtn.addEventListener('click', async () => await tryCloseModal());
-window.addEventListener('click', async (e) => { if (e.target === modal) await tryCloseModal(); });
-window.addEventListener('keydown', async (e) => { if (e.key === 'Escape' && modal.style.display === 'block') await tryCloseModal(); });
-
-/* marcar dirty */
-[...form.querySelectorAll('input, textarea, select')].forEach(el => {
-  el.addEventListener('input', markDirty);
-  el.addEventListener('change', markDirty);
+// Evento para o botão de cancelar edição
+cancelBtn.addEventListener('click', () => {
+    if (confirm('Tem certeza que deseja cancelar a edição? As alterações serão perdidas.')) {
+        resetForm();
+    }
 });
 
 /* mostrar/ocultar endereço */
 entregaSelect.addEventListener('change', () => {
   enderecoContainer.style.display = entregaSelect.value === 'Sim' ? 'block' : 'none';
-  markDirty();
 });
 
 /* Submit (Adicionar / Atualizar) */
@@ -116,19 +100,16 @@ form.addEventListener('submit', async (e) => {
   try {
     if (editId) {
       await updateDoc(doc(db, "pedidos", editId), pedido);
-      editId = null;
     } else {
       await addDoc(pedidosColRef, pedido);
     }
-
-    resetFormAndDirty();
-    modal.style.display = 'none';
+    resetForm();
   } catch (err) {
     logAndAlertError(err, 'salvar pedido');
   }
 });
 
-/* impressão */
+/* impressão (código idêntico ao seu) */
 function printReceipt(docSnap) {
   const raw = docSnap.data() || {};
   const p = {
@@ -152,14 +133,7 @@ function printReceipt(docSnap) {
       <title>Recibo</title>
       <style>
         @page { size: 80mm auto; margin: 0; }
-        body {
-          font-family: monospace;
-          margin: 6px;
-          color: #000;
-          background: #fff;
-          font-size: 12px;
-          line-height: 1.2;
-        }
+        body { font-family: monospace; margin: 6px; color: #000; background: #fff; font-size: 12px; line-height: 1.2; }
         .center { text-align:center; }
         .bold { font-weight:700; }
         hr { border:0; border-top:1px dashed #000; margin:6px 0; }
@@ -223,11 +197,11 @@ function criarCard(docSnap) {
   const card = document.createElement('div');
   card.className = 'cardPedido';
   card.innerHTML = `
-    <h3>${p.nome}</h3>
-    <p><strong>Data:</strong> ${p.data} - <strong>Hora:</strong> ${p.horario}</p>
-    <p><strong>Itens:</strong> ${p.itens}</p>
-    <p><strong>Valor:</strong> R$${p.valor.toFixed(2)} - <strong>Pago:</strong> ${p.pago}</p>
-    <p>${p.entrega === 'Sim' ? 'Entrega: ' + p.endereco : 'Retirada'}</p>
+    <h3>${escapeHtml(p.nome)}</h3>
+    <p><strong>Hora:</strong> ${escapeHtml(p.horario)}</p>
+    <p><strong>Itens:</strong> ${escapeHtml(p.itens)}</p>
+    <p><strong>Valor:</strong> R$${p.valor.toFixed(2)} - <strong>Pago:</strong> ${escapeHtml(p.pago)}</p>
+    <p>${p.entrega === 'Sim' ? '<strong>Entrega:</strong> ' + escapeHtml(p.endereco) : '<strong>Retirada</strong>'}</p>
   `;
 
   const actions = document.createElement('div');
@@ -252,17 +226,16 @@ function criarCard(docSnap) {
     enderecoContainer.style.display = raw.entrega === 'Sim' ? 'block' : 'none';
     editId = docSnap.id;
     submitBtn.textContent = 'Atualizar Pedido';
-    clearDirty();
-    openModalForEdit();
+    formTitle.textContent = `Editando Pedido de ${raw.nome}`;
+    cancelBtn.style.display = 'inline-block'; // Mostra o botão de cancelar
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Rola a página para o topo
   });
 
   /* Imprimir */
   const btnImprimir = document.createElement('button');
   btnImprimir.className = 'btnImprimir';
   btnImprimir.textContent = '🖨️ Imprimir';
-  btnImprimir.addEventListener('click', () => {
-    printReceipt(docSnap);
-  });
+  btnImprimir.addEventListener('click', () => printReceipt(docSnap));
 
   /* Excluir */
   const btnExcluir = document.createElement('button');
@@ -286,30 +259,65 @@ function criarCard(docSnap) {
   return card;
 }
 
-/* ---- ORDENAÇÃO ---- */
-let pedidosCache = []; // guarda docs
+/* ---- NOVA LÓGICA DE RENDERIZAÇÃO E ORDENAÇÃO ---- */
+let pedidosCache = [];
+
 function renderPedidos() {
   pedidosContainer.innerHTML = '';
 
-  const ordem = ordenarSelect.value;
-  const pedidosOrdenados = [...pedidosCache].sort((a, b) => {
-    const horaA = a.data().horario || '';
-    const horaB = b.data().horario || '';
-    if (!horaA && !horaB) return 0;
-    if (!horaA) return 1;
-    if (!horaB) return -1;
-
-    return ordem === 'asc'
-      ? horaA.localeCompare(horaB)
-      : horaB.localeCompare(horaA);
+  // 1. Agrupar pedidos por data
+  const pedidosPorData = {};
+  pedidosCache.forEach(docSnap => {
+    const data = docSnap.data().data || 'Sem Data';
+    if (!pedidosPorData[data]) {
+      pedidosPorData[data] = [];
+    }
+    pedidosPorData[data].push(docSnap);
   });
 
-  pedidosOrdenados.forEach(docSnap => {
-    try {
-      const card = criarCard(docSnap);
-      pedidosContainer.appendChild(card);
-    } catch (e) {
-      console.error('Erro ao renderizar doc', docSnap.id, e);
+  // 2. Ordenar as datas (da mais recente para a mais antiga)
+  const datasOrdenadas = Object.keys(pedidosPorData).sort((a, b) => b.localeCompare(a));
+  
+  if (datasOrdenadas.length === 0) {
+      pedidosContainer.innerHTML = '<p style="text-align:center; color:#888;">Nenhum pedido registrado ainda.</p>';
+      return;
+  }
+
+  // 3. Iterar sobre cada dia e renderizar os pedidos
+  datasOrdenadas.forEach(data => {
+    // Só renderiza o dia se houver pedidos para ele
+    if (pedidosPorData[data] && pedidosPorData[data].length > 0) {
+      
+      // Cria o cabeçalho do dia
+      const header = document.createElement('h2');
+      header.className = 'data-header'; // Classe para estilização opcional
+      header.textContent = formatarDataParaExibicao(data);
+      pedidosContainer.appendChild(header);
+
+      // Cria um container grid para os cards deste dia
+      const diaContainer = document.createElement('div');
+      diaContainer.className = 'pedidosContainer'; // Reutiliza a classe para o layout de grid
+      pedidosContainer.appendChild(diaContainer);
+
+      // Ordena os pedidos *deste dia* de acordo com o seletor
+      const ordem = ordenarSelect.value;
+      const pedidosDoDiaOrdenados = [...pedidosPorData[data]].sort((a, b) => {
+        const horaA = a.data().horario || '';
+        const horaB = b.data().horario || '';
+        if (!horaA) return 1;
+        if (!horaB) return -1;
+        return ordem === 'asc' ? horaA.localeCompare(horaB) : horaB.localeCompare(horaA);
+      });
+
+      // Renderiza os cards ordenados para este dia
+      pedidosDoDiaOrdenados.forEach(docSnap => {
+        try {
+          const card = criarCard(docSnap);
+          diaContainer.appendChild(card);
+        } catch (e) {
+          console.error('Erro ao renderizar doc', docSnap.id, e);
+        }
+      });
     }
   });
 }
@@ -318,9 +326,8 @@ ordenarSelect.addEventListener('change', renderPedidos);
 
 /* snapshot em tempo real */
 onSnapshot(pedidosColRef, (snapshot) => {
-  pedidosCache = [];
-  snapshot.forEach((docSnap) => pedidosCache.push(docSnap));
-  renderPedidos();
+  pedidosCache = snapshot.docs; // Atualiza o cache com todos os documentos
+  renderPedidos(); // Re-renderiza tudo com a nova lógica
 }, (err) => {
   logAndAlertError(err, 'carregar pedidos (onSnapshot)');
 });
