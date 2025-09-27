@@ -2,67 +2,75 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>DuCheffton Pedidos</title>
-        <link rel="stylesheet" href="style.css">
-        </head>
-        <body>
-          <div class="container">
-              <h1>Registrar Pedido</h1>
-                  <form id="pedidoForm">
-                        <label>Nome:</label>
-                              <input type="text" id="nome" required>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DuCheffton Pedidos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Pedidos Registrados</h1>
+    <button id="abrirModal" class="btnAdd">+ Adicionar Pedido</button>
 
-                                    <label>Data:</label>
-                                          <input type="date" id="data" required>
+    <div id="pedidosContainer" class="pedidosContainer"></div>
+  </div>
 
-                                                <label>Número do Cliente:</label>
-                                                      <input type="text" id="numero">
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="modalContent">
+      <span class="close">&times;</span>
+      <h2>Adicionar/Editar Pedido</h2>
+      <form id="pedidoForm">
+        <label>Nome:</label>
+        <input type="text" id="nome" required>
 
-                                                            <label>Forma de Pagamento:</label>
-                                                                  <select id="pagamento" required>
-                                                                          <option value="">Selecione</option>
-                                                                                  <option value="Dinheiro">Dinheiro</option>
-                                                                                          <option value="Cartão">Cartão</option>
-                                                                                                  <option value="PIX">PIX</option>
-                                                                                                        </select>
+        <label>Data:</label>
+        <input type="date" id="data" required>
 
-                                                                                                              <label>Entrega:</label>
-                                                                                                                    <select id="entrega" required>
-                                                                                                                            <option value="">Selecione</option>
-                                                                                                                                    <option value="Sim">Sim</option>
-                                                                                                                                            <option value="Não">Não</option>
-                                                                                                                                                  </select>
+        <label>Número do Cliente:</label>
+        <input type="text" id="numero">
 
-                                                                                                                                                        <div id="enderecoContainer" style="display:none;">
-                                                                                                                                                                <label>Endereço:</label>
-                                                                                                                                                                        <input type="text" id="endereco">
-                                                                                                                                                                              </div>
+        <label>Forma de Pagamento:</label>
+        <select id="pagamento" required>
+          <option value="">Selecione</option>
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Cartão">Cartão</option>
+          <option value="PIX">PIX</option>
+        </select>
 
-                                                                                                                                                                                    <label>Itens do Pedido:</label>
-                                                                                                                                                                                          <textarea id="itens" required></textarea>
+        <label>Entrega:</label>
+        <select id="entrega" required>
+          <option value="">Selecione</option>
+          <option value="Sim">Sim</option>
+          <option value="Não">Não</option>
+        </select>
 
-                                                                                                                                                                                                <label>Valor Final:</label>
-                                                                                                                                                                                                      <input type="number" id="valor" step="0.01" required>
+        <div id="enderecoContainer" style="display:none;">
+          <label>Endereço:</label>
+          <input type="text" id="endereco">
+        </div>
 
-                                                                                                                                                                                                            <label>Horário do Pedido:</label>
-                                                                                                                                                                                                                  <input type="time" id="horario" required>
+        <label>Itens do Pedido:</label>
+        <textarea id="itens" required></textarea>
 
-                                                                                                                                                                                                                        <label>Pago?</label>
-                                                                                                                                                                                                                              <select id="pago" required>
-                                                                                                                                                                                                                                      <option value="">Selecione</option>
-                                                                                                                                                                                                                                              <option value="Sim">Sim</option>
-                                                                                                                                                                                                                                                      <option value="Não">Não</option>
-                                                                                                                                                                                                                                                            </select>
+        <label>Valor Final:</label>
+        <input type="number" id="valor" step="0.01" required>
 
-                                                                                                                                                                                                                                                                  <button type="submit">Adicionar/Atualizar Pedido</button>
-                                                                                                                                                                                                                                                                      </form>
-                                                                                                                                                                                                                                                                          
-                                                                                                                                                                                                                                                                              <h2>Pedidos Registrados</h2>
-                                                                                                                                                                                                                                                                                  <ul id="pedidosList"></ul>
-                                                                                                                                                                                                                                                                                    </div>
+        <label>Horário do Pedido:</label>
+        <input type="time" id="horario" required>
 
-                                                                                                                                                                                                                                                                                      <script type="module" src="firebase.js"></script>
-                                                                                                                                                                                                                                                                                        <script type="module" src="script.js"></script>
-                                                                                                                                                                                                                                                                                        </body>
-                                                                                                                                                                                                                                                                                        </html>
+        <label>Pago?</label>
+        <select id="pago" required>
+          <option value="">Selecione</option>
+          <option value="Sim">Sim</option>
+          <option value="Não">Não</option>
+        </select>
+
+        <button type="submit" id="submitBtn">Adicionar Pedido</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
+</html>
