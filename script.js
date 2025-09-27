@@ -78,18 +78,16 @@ function carregarPedidos() {
       const id = docSnap.id;
 
       const card = document.createElement("div");
-      card.className = "cardPedido";
+      card.className = "pedido-card";
       card.innerHTML = `
         <h3>${pedido.nome}</h3>
         <p><strong>Data:</strong> ${pedido.data}</p>
         <p><strong>Itens:</strong> ${pedido.itens}</p>
         <p><strong>Valor:</strong> R$ ${pedido.valorFinal ? pedido.valorFinal.toFixed(2) : "0,00"}</p>
         <p><strong>Pago:</strong> ${pedido.pago ? "Sim" : "Não"}</p>
-        <div class="actions">
-          <button class="btnEditar" onclick="editarPedido('${id}')">Editar</button>
-          <button class="btnExcluir" onclick="excluirPedido('${id}')">Excluir</button>
-          <button class="btnImprimir" onclick="imprimirPedido('${id}')">🖨 Imprimir</button>
-        </div>
+        <button onclick="editarPedido('${id}')">Editar</button>
+        <button onclick="excluirPedido('${id}')">Excluir</button>
+        <button onclick="imprimirPedido('${id}')">🖨 Imprimir</button>
       `;
       listaPedidos.appendChild(card);
     });
@@ -133,8 +131,8 @@ window.imprimirPedido = async (id) => {
     if (d.id === id) {
       const pedido = d.data();
       const conteudo = `
-        <div class="pedido-impressao" style="width:80mm; font-size:1.2rem; font-family:monospace;">
-          <h2 style="text-align:center;">Pedido #${id}</h2>
+        <div class="pedido-impressao">
+          <h2>Pedido #${id}</h2>
           <p><strong>Nome:</strong> ${pedido.nome}</p>
           <p><strong>Data:</strong> ${pedido.data}</p>
           <p><strong>Horário:</strong> ${pedido.horario}</p>
@@ -145,9 +143,6 @@ window.imprimirPedido = async (id) => {
           <p><strong>Itens:</strong> ${pedido.itens}</p>
           <p><strong>Valor Final:</strong> R$ ${pedido.valorFinal ? pedido.valorFinal.toFixed(2) : "0,00"}</p>
           <p><strong>Pago:</strong> ${pedido.pago ? "Sim" : "Não"}</p>
-          <p style="margin-top:10px; text-align:center; font-weight:bold;">
-            "Se Deus é por nós, quem será contra nós?" Rm. 8:31
-          </p>
         </div>
       `;
 
