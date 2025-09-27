@@ -1,93 +1,151 @@
-/* Estilo principal */
+/* Geral */
 body {
   font-family: Arial, sans-serif;
+  background-color: #0f1113;
+  color: #f2f4f8;
   margin: 0;
-  background: #f4f4f9;
-  color: #333;
+  padding: 0;
 }
 
-header {
-  background: #4CAF50;
-  color: white;
+.container {
+  max-width: 1000px;
+  margin: 2rem auto;
   padding: 1rem;
+}
+
+h1 {
   text-align: center;
+  color: #00bfff;
+  margin-bottom: 1rem;
 }
 
-button {
-  margin: 5px;
-  padding: 10px 15px;
+.btnAdd {
+  display: block;
+  margin: 0 auto 1.5rem;
+  padding: 0.8rem 1.4rem;
+  background-color: #00bfff;
   border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-#btnAdicionar {
-  background: #4CAF50;
-  color: white;
-}
-
-#formPedido {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  width: 300px;
-  margin: 20px auto;
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-}
-
-input, select, textarea {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
-
-#listaPedidos {
-  margin: 20px;
-  display: grid;
-  gap: 10px;
-}
-
-.pedido-card {
-  background: white;
-  padding: 15px;
   border-radius: 10px;
-  box-shadow: 0px 3px 6px rgba(0,0,0,0.1);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform .12s ease;
+}
+.btnAdd:hover { transform: translateY(-3px); }
+
+/* Cards */
+
+
+
+
+.pedidosContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
 }
 
-.pedido-card h3 {
-  margin: 0 0 10px;
+.cardPedido {
+  background: linear-gradient(180deg, #1f2326 0%, #282c30 100%);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  position: relative;
+  min-height: 140px;
 }
 
-/* 🔥 Estilo de impressão */
+.cardPedido h3 {
+  margin: 0 0 0.35rem 0;
+  color: #bfefff;
+  font-size: 1.05rem;
+}
+
+.cardPedido p { margin: 0.15rem 0; font-size: 0.95rem; color: #e6eef6; }
+
+/* Buttons nos cards */
+.cardPedido .actions {
+  margin-top: 0.7rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cardPedido button {
+  padding: 0.35rem 0.6rem;
+
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* cores */
+.btnEditar { background: #ffd54a; color: #1b1b1b; }
+.btnImprimir { background: #4caf50; color: #fff; }
+.btnExcluir { background: #ff6b6b; color: #fff; }
+
+
+
+
+
+
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(2,6,23,0.7);
+}
+
+.modalContent {
+  background-color: #16181a;
+  margin: 5% auto;
+  padding: 1.6rem;
+  border-radius: 12px;
+  max-width: 520px;
+  color: #eaf6ff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  top: 0.6rem;
+  right: 1rem;
+  font-size: 1.6rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Form controls */
+form { display:flex; flex-direction:column; gap:0.85rem; }
+input, select, textarea, button { padding:0.6rem; border-radius:8px; border:none; font-size:0.95rem; }
+textarea { min-height:80px; resize:vertical; }
+
+
+
+
+
+
+
+
+
+/* Submit */
+button[type="submit"] {
+  background-color: #00bfff;
+  color: #fff;
+  font-weight: 700;
+
+
+}
+button[type="submit"]:hover { transform: translateY(-2px); }
+
+/* impressão - preview local (não afeta ticket gerado pela nova janela) */
 @media print {
-  body {
-    background: white;
-    font-family: "Courier New", monospace;
-  }
-
-  .pedido-impressao {
-    width: 80mm;
-    padding: 10px;
-    font-size: 20px;   /* Texto grande */
-    line-height: 1.6;
-  }
-
-  .pedido-impressao h2 {
-    font-size: 28px;   /* Título bem grande */
-    margin-bottom: 10px;
-    text-align: center;
-  }
-
-  .pedido-impressao p {
-    font-size: 20px;
-    margin: 6px 0;
-  }
+  body { background:#fff; color:#000; }
 }

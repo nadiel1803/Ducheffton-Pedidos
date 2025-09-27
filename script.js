@@ -32,6 +32,7 @@ function logAndAlertError(err, where = '') {
   console.error(`Erro${where ? ' em ' + where : ''}:`, err);
   alert('Ocorreu um erro (veja console).');
 }
+
 function safeString(value) {
   return (value === undefined || value === null) ? '' : String(value);
 }
@@ -45,16 +46,30 @@ function escapeHtml(str) {
 }
 
 /* Modal open/close com confirmação se dirty */
+
+
+
+
+
+
+
+
+
+
+
 function openModalForNew() {
   modal.style.display = 'block';
   resetFormAndDirty();
   submitBtn.textContent = 'Adicionar Pedido';
   editId = null;
 }
+
 function openModalForEdit() {
   modal.style.display = 'block';
   clearDirty();
+
 }
+
 async function tryCloseModal() {
   if (!isDirty) {
     modal.style.display = 'none';
@@ -69,6 +84,7 @@ async function tryCloseModal() {
     editId = null;
     return true;
   }
+
   return false;
 }
 
@@ -78,12 +94,35 @@ window.addEventListener('click', async (e) => { if (e.target === modal) await tr
 window.addEventListener('keydown', async (e) => { if (e.key === 'Escape' && modal.style.display === 'block') await tryCloseModal(); });
 
 /* marcar dirty ao alterar campos */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 [...form.querySelectorAll('input, textarea, select')].forEach(el => {
   el.addEventListener('input', markDirty);
   el.addEventListener('change', markDirty);
 });
 
 /* mostrar/ocultar endereço e marcar dirty */
+
+
+
 entregaSelect.addEventListener('change', () => {
   enderecoContainer.style.display = entregaSelect.value === 'Sim' ? 'block' : 'none';
   markDirty();
@@ -157,14 +196,14 @@ function printReceipt(docSnap) {
           margin: 6px;
           color: #000;
           background: #fff;
-          font-size: 15px; /* AQUI aumentei de 12px para 15px */
-          line-height: 1.4;
+          font-size: 12px;
+          line-height: 1.2;
         }
         .center { text-align:center; }
         .bold { font-weight:700; }
         hr { border:0; border-top:1px dashed #000; margin:6px 0; }
-        .items { margin-top:6px; white-space: pre-wrap; font-size:14px; }
-        .small { font-size:13px; }
+        .items { margin-top:6px; white-space: pre-wrap; font-size:11px; }
+        .small { font-size:11px; }
         .right { text-align:right; }
       </style>
     </head>
@@ -220,6 +259,9 @@ function criarCard(docSnap) {
     horario: safeString(raw.horario) || '—',
     itens: safeString(raw.itens) || '—',
     valor: (() => { const n = Number(raw.valor); return Number.isFinite(n) ? n : 0; })(),
+
+
+
     pago: safeString(raw.pago) || '—',
     entrega: safeString(raw.entrega) || 'Não',
     endereco: safeString(raw.endereco) || ''
@@ -243,6 +285,7 @@ function criarCard(docSnap) {
   btnEditar.className = 'btnEditar';
   btnEditar.textContent = '✏️ Editar';
   btnEditar.addEventListener('click', () => {
+
     document.getElementById('nome').value = raw.nome || '';
     document.getElementById('data').value = raw.data || '';
     document.getElementById('numero').value = raw.numero || '';
@@ -257,7 +300,7 @@ function criarCard(docSnap) {
     enderecoContainer.style.display = raw.entrega === 'Sim' ? 'block' : 'none';
     editId = docSnap.id;
     submitBtn.textContent = 'Atualizar Pedido';
-    clearDirty();
+    clearDirty(); // campos preenchidos programaticamente
     openModalForEdit();
   });
 
