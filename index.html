@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DuCheffton Pedidos</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Pedidos - DuCheffton</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,58 +11,65 @@
     <h1>Pedidos Registrados</h1>
     <button id="abrirModal" class="btnAdd">+ Adicionar Pedido</button>
 
+    <!-- Filtro de ordenação -->
+    <div class="filtros">
+      <label for="ordenarHorario">Ordenar por horário:</label>
+      <select id="ordenarHorario">
+        <option value="asc">Crescente</option>
+        <option value="desc">Decrescente</option>
+      </select>
+    </div>
+
+    <!-- Aqui entram os cards -->
     <div id="pedidosContainer" class="pedidosContainer"></div>
   </div>
 
-  <!-- Modal -->
-  <div id="modal" class="modal" aria-hidden="true">
-    <div class="modalContent" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <span class="close" title="Fechar">&times;</span>
-      <h2 id="modalTitle">Adicionar/Editar Pedido</h2>
+  <!-- Modal de cadastro/edição -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2 id="modalTitle">Cadastro de Pedido</h2>
       <form id="pedidoForm">
-        <label>Nome:</label>
-        <input type="text" id="nome" required />
+        <label>Nome do Cliente</label>
+        <input type="text" id="nome" required>
 
-        <label>Data:</label>
-        <input type="date" id="data" required />
+        <label>Data</label>
+        <input type="date" id="data" required>
 
-        <label>Número do Cliente:</label>
-        <input type="text" id="numero" />
+        <label>Número do Cliente</label>
+        <input type="text" id="numero">
 
-        <label>Forma de Pagamento:</label>
+        <label>Forma de Pagamento</label>
         <select id="pagamento" required>
-          <option value="">Selecione</option>
           <option value="Dinheiro">Dinheiro</option>
           <option value="Cartão">Cartão</option>
-          <option value="PIX">PIX</option>
+          <option value="Pix">Pix</option>
         </select>
 
-        <label>Entrega:</label>
+        <label>Entrega?</label>
         <select id="entrega" required>
-          <option value="">Selecione</option>
-          <option value="Sim">Sim</option>
           <option value="Não">Não</option>
+          <option value="Sim">Sim</option>
         </select>
 
         <div id="enderecoContainer" style="display:none;">
-          <label>Endereço:</label>
-          <input type="text" id="endereco" />
+          <label>Endereço</label>
+          <input type="text" id="endereco">
         </div>
 
-        <label>Itens do Pedido:</label>
+        <label>Itens do Pedido</label>
         <textarea id="itens" required></textarea>
 
-        <label>Valor Final:</label>
-        <input type="number" id="valor" step="0.01" required />
+        <label>Valor Total (R$)</label>
+        <input type="number" id="valor" step="0.01" required>
 
-        <label>Horário do Pedido:</label>
-        <input type="time" id="horario" required />
+        <label>Horário</label>
+        <input type="time" id="horario" required>
 
         <label>Pago?</label>
         <select id="pago" required>
-          <option value="">Selecione</option>
-          <option value="Sim">Sim</option>
           <option value="Não">Não</option>
+          <option value="Sim">Sim</option>
         </select>
 
         <button type="submit" id="submitBtn">Adicionar Pedido</button>
@@ -70,7 +77,6 @@
     </div>
   </div>
 
-  <script type="module" src="firebase.js"></script>
   <script type="module" src="script.js"></script>
 </body>
 </html>
