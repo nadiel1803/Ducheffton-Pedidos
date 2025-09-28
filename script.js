@@ -11,10 +11,8 @@ import {
 
 import {
   onAuthStateChanged,
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut,
-  sendPasswordResetEmail
+  signOut
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 /* -----------------------
@@ -34,17 +32,7 @@ const authOverlay = document.getElementById('authOverlay');
 const loginForm = document.getElementById('loginForm');
 const loginEmail = document.getElementById('loginEmail');
 const loginPassword = document.getElementById('loginPassword');
-const setupForm = document.getElementById('setupForm');
-const setupEmail = document.getElementById('setupEmail');
-const setupPassword = document.getElementById('setupPassword');
-const setupConfirm = document.getElementById('setupConfirm');
-const recoverForm = document.getElementById('recoverForm');
-const recoverEmail = document.getElementById('recoverEmail');
 
-const switchToSetup = document.getElementById('switchToSetup');
-const switchToRecover = document.getElementById('switchToRecover');
-const cancelSetup = document.getElementById('cancelSetup');
-const cancelRecover = document.getElementById('cancelRecover');
 const authMsg = document.getElementById('authMsg');
 
 const appContainer = document.getElementById('appContainer');
@@ -58,8 +46,12 @@ const pedidosColRef = collection(db, "pedidos");
    ----------------------- */
 function logAndAlertError(err, where = '') {
   console.error(`Erro${where ? ' em ' + where : ''}:`, err);
-  // não usar alert em produção, aqui é só feedback dev
-  authMsg && (authMsg.textContent = 'Erro: ' + (err.message || err.code || err));
+  // Mensagem amigável no overlay se for erro de auth
+  if (authMsg) {
+    authMsg.textContent = err && err.message ? err.message : (err.code || 'Erro desconhecido');
+  } else {
+    alert('Ocorreu um erro (veja console).');
+  }
 }
 
 function safeString(value) {
@@ -113,94 +105,36 @@ entregaSelect.addEventListener('change', () => {
 });
 
 /* -----------------------
-   AUTH UI HANDLERS
+   AUTH (LOGIN & LOGOUT)
    ----------------------- */
-switchToSetup.addEventListener('click', () => {
-  loginForm.style.display = 'none';
-  recoverForm.style.display = 'none';
-  setupForm.style.display = 'block';
-  authMsg.textContent = '';
-});
-
-switchToRecover.addEventListener('click', () => {
-  loginForm.style.display = 'none';
-  setupForm.style.display = 'none';
-  recoverForm.style.display = 'block';
-  authMsg.textContent = '';
-});
-
-cancelSetup.addEventListener('click', () => {
-  setupForm.style.display = 'none';
-  loginForm.style.display = 'block';
-  authMsg.textContent = '';
-});
-
-cancelRecover.addEventListener('click', () => {
-  recoverForm.style.display = 'none';
-  loginForm.style.display = 'block';
-  authMsg.textContent = '';
-});
-
-/* criar conta (setup) */
-setupForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = (setupEmail.value || '').trim();
-  const pwd = (setupPassword.value || '').trim();
-  const confirm = (setupConfirm.value || '').trim();
-
-  if (!email) { authMsg.textContent = 'Preencha o email.'; return; }
-  if (pwd.length < 6) { authMsg.textContent = 'Senha mínima: 6 caracteres.'; return; }
-  if (pwd !== confirm) { authMsg.textContent = 'As senhas não conferem.'; return; }
-
-  try {
-    await createUserWithEmailAndPassword(auth, email, pwd);
-    authMsg.textContent = 'Conta criada! Você será logado automaticamente.';
-    // onAuthStateChanged cuidará do resto
-  } catch (err) {
-    logAndAlertError(err, 'criar conta');
-  }
-});
-
-/* login */
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = (loginEmail.value || '').trim();
   const pwd = (loginPassword.value || '').trim();
-  if (!email || !pwd) { authMsg.textContent = 'Preencha email e senha.'; return; }
+  if (!email || !pwd) {
+    authMsg.textContent = 'Preencha email e senha.';
+    return;
+  }
 
   try {
     await signInWithEmailAndPassword(auth, email, pwd);
     authMsg.textContent = '';
+    // onAuthStateChanged cuidará de mostrar o app
   } catch (err) {
     logAndAlertError(err, 'login');
   }
 });
 
-/* recuperar senha */
-recoverForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = (recoverEmail.value || '').trim();
-  if (!email) { authMsg.textContent = 'Digite o email para recuperar.'; return; }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    authMsg.textContent = 'Link de recuperação enviado (verifique seu email).';
-  } catch (err) {
-    logAndAlertError(err, 'recuperar senha');
-  }
-});
-
-/* logout */
 logoutBtn.addEventListener('click', async () => {
   try {
     await signOut(auth);
-    // onAuthStateChanged cuidará de esconder o app
   } catch (err) {
     logAndAlertError(err, 'logout');
   }
 });
 
 /* -----------------------
-   CRUD e Impressão (mantive seu código, com leves ajustes)
+   IMPRESSÃO / CRUD (seu código adaptado)
    ----------------------- */
 
 /* impressão */
@@ -488,10 +422,7 @@ onAuthStateChanged(auth, (user) => {
     // sem usuário autenticado
     appContainer.style.display = 'none';
     authOverlay.style.display = 'flex';
-    // limpar forma de login
     loginForm.reset();
-    setupForm.reset();
-    recoverForm.reset();
     authMsg.textContent = '';
 
     if (unsubscribePedidosSnapshot) {

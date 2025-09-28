@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- AUTH OVERLAY -->
+  <!-- AUTH OVERLAY (login apenas) -->
   <div id="authOverlay" class="auth-overlay" aria-hidden="false">
     <div class="auth-box" role="dialog" aria-labelledby="authTitle">
       <h2 id="authTitle">Acesso — DuCheffton</h2>
@@ -24,37 +24,9 @@
           <button type="submit" id="loginBtn">Entrar</button>
         </div>
 
+        <!-- opcional: instrução -->
         <div class="auth-footer">
-          <button type="button" id="switchToSetup" class="linkish">Primeiro acesso? Criar conta</button>
-          <button type="button" id="switchToRecover" class="linkish">Esqueci a senha</button>
-        </div>
-      </form>
-
-      <!-- SETUP FORM (criar conta) -->
-      <form id="setupForm" class="auth-form" style="display:none;">
-        <label for="setupEmail">Email</label>
-        <input type="email" id="setupEmail" placeholder="seu@email.com" required>
-
-        <label for="setupPassword">Senha (mín. 6)</label>
-        <input type="password" id="setupPassword" placeholder="nova senha" required>
-
-        <label for="setupConfirm">Confirmar senha</label>
-        <input type="password" id="setupConfirm" placeholder="confirme a senha" required>
-
-        <div class="auth-actions">
-          <button type="submit" id="setupBtn">Criar Conta</button>
-          <button type="button" id="cancelSetup">Cancelar</button>
-        </div>
-      </form>
-
-      <!-- RECOVER FORM (recuperar senha) -->
-      <form id="recoverForm" class="auth-form" style="display:none;">
-        <label for="recoverEmail">Email para recuperação</label>
-        <input type="email" id="recoverEmail" placeholder="seu@email.com" required>
-
-        <div class="auth-actions">
-          <button type="submit" id="recoverBtn">Enviar link</button>
-          <button type="button" id="cancelRecover">Cancelar</button>
+          <div class="small-note">Apenas usuários aprovados (criados pelo administrador) podem entrar.</div>
         </div>
       </form>
 

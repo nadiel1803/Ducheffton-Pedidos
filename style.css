@@ -109,9 +109,7 @@ h1 {
   font-weight: bold;
 }
 
-.auth-actions #loginBtn,
-.auth-actions #setupBtn,
-.auth-actions #recoverBtn {
+.auth-actions #loginBtn {
   background: #4cc9f0;
   color: #121212;
 }
@@ -119,15 +117,11 @@ h1 {
 .auth-footer {
   margin-top: 0.7rem;
   display:flex;
-  justify-content: space-between;
+  justify-content: center;
 }
 
-.linkish {
-  background: transparent;
-  border: none;
+.small-note {
   color: #cde9ff;
-  cursor: pointer;
-  text-decoration: underline;
   font-size: 0.9rem;
 }
 
