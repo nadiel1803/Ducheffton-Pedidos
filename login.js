@@ -1,37 +1,34 @@
 import { auth } from './firebase.js';
-import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-const authOverlay = document.getElementById('authOverlay');
-const appContainer = document.getElementById('appContainer');
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
-const emailInput = document.getElementById('emailLogin');
-const senhaInput = document.getElementById('senhaLogin');
-const loginMsg = document.getElementById('loginMsg');
+const loginError = document.getElementById('loginError');
 
 loginBtn.addEventListener('click', async () => {
-  loginMsg.textContent = '';
   const email = emailInput.value.trim();
-  const senha = senhaInput.value;
-
-  if (!email || !senha) {
-    loginMsg.textContent = 'Preencha email e senha!';
-    return;
-  }
+  const password = passwordInput.value.trim();
+  loginError.textContent = '';
 
   try {
-    await signInWithEmailAndPassword(auth, email, senha);
+    await signInWithEmailAndPassword(auth, email, password);
   } catch (err) {
-    console.error('Erro login:', err);
-    loginMsg.textContent = 'Email ou senha inválidos!';
+    loginError.textContent = 'Erro ao logar: ' + err.message;
   }
 });
 
 onAuthStateChanged(auth, (user) => {
+  const overlay = document.getElementById('authOverlay');
+  const app = document.getElementById('appContainer');
+
   if (user) {
-    authOverlay.style.display = 'none';
-    appContainer.style.display = 'block';
+    overlay.style.display = 'none';
+    app.style.display = 'block';
+    // Aqui garantimos que a função de renderizar pedidos seja chamada
+    import('./script.js').then(m => m.renderPedidos());
   } else {
-    authOverlay.style.display = 'flex';
-    appContainer.style.display = 'none';
+    overlay.style.display = 'flex';
+    app.style.display = 'none';
   }
 });
