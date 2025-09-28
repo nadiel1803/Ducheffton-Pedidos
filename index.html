@@ -3,94 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Pedidos - DuCheffton</title>
+  <title>Controle de Pedidos</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Overlay de login -->
-  <div id="authOverlay">
-    <div class="loginBox">
-      <h2>Login</h2>
-      <input type="email" id="email" placeholder="Email">
-      <input type="password" id="password" placeholder="Senha">
-      <button id="loginBtn">Entrar</button>
-      <div id="loginError"></div>
-    </div>
-  </div>
-
-  <!-- Container do app (invisível até login) -->
-  <div id="appContainer" style="display:none;" class="container">
+  <div class="container">
     <h1>Controle de Pedidos</h1>
 
-    <div class="form-section">
-      <h2 id="formTitle">Adicionar Novo Pedido</h2>
-      <form id="pedidoForm">
-        <label>Nome do Cliente</label>
-        <input type="text" id="nome" required>
+    <form id="pedidoForm">
+      <label>Nome do Cliente</label>
+      <input type="text" id="nome" required>
 
-        <label>Data</label>
-        <input type="date" id="data" required>
+      <label>Data</label>
+      <input type="date" id="data" required>
 
-        <label>Número do Cliente</label>
-        <input type="text" id="numero">
+      <label>Número do Cliente</label>
+      <input type="text" id="numero">
 
-        <label>Forma de Pagamento</label>
-        <select id="pagamento" required>
-          <option value="Dinheiro">Dinheiro</option>
-          <option value="Cartão">Cartão</option>
-          <option value="Pix">Pix</option>
-        </select>
-
-        <label>Entrega?</label>
-        <select id="entrega" required>
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
-
-        <div id="enderecoContainer" style="display:none;">
-          <label>Endereço</label>
-          <input type="text" id="endereco">
-        </div>
-
-        <label>Itens do Pedido</label>
-        <textarea id="itens" required></textarea>
-
-        <label>Valor Total (R$)</label>
-        <input type="number" id="valor" step="0.01" required>
-
-        <label>Horário</label>
-        <input type="time" id="horario" required>
-
-        <label>Pago?</label>
-        <select id="pago" required>
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
-        
-        <div class="form-actions">
-            <button type="submit" id="submitBtn">Adicionar Pedido</button>
-            <button type="button" id="cancelBtn" style="display: none;">Cancelar Edição</button>
-        </div>
-      </form>
-    </div>
-
-    <h1 style="margin-top: 2rem;">Pedidos Registrados</h1>
-    
-    <div id="navegacaoDiasContainer" class="navegacaoDias"></div>
-
-    <div class="filtros">
-      <label for="ordenarHorario">Ordenar por horário (dentro de cada dia):</label>
-      <select id="ordenarHorario">
-        <option value="asc">Crescente</option>
-        <option value="desc">Decrescente</option>
+      <label>Forma de Pagamento</label>
+      <select id="pagamento" required>
+        <option value="Dinheiro">Dinheiro</option>
+        <option value="Cartão">Cartão</option>
+        <option value="Pix">Pix</option>
       </select>
-    </div>
 
-    <div id="pedidosContainer" class="pedidosContainerGeral"></div>
+      <label>Entrega?</label>
+      <select id="entrega" required>
+        <option value="Não">Não</option>
+        <option value="Sim">Sim</option>
+      </select>
+
+      <div id="enderecoContainer" style="display:none;">
+        <label>Endereço</label>
+        <input type="text" id="endereco">
+      </div>
+
+      <label>Itens do Pedido</label>
+      <textarea id="itens" required></textarea>
+
+      <label>Valor Total (R$)</label>
+      <input type="number" id="valor" step="0.01" required>
+
+      <label>Horário</label>
+      <input type="time" id="horario" required>
+
+      <label>Pago?</label>
+      <select id="pago" required>
+        <option value="Não">Não</option>
+        <option value="Sim">Sim</option>
+      </select>
+
+      <button type="submit">Adicionar Pedido</button>
+    </form>
+
+    <h2>Pedidos Registrados</h2>
+    <div id="pedidosContainer"></div>
   </div>
 
-  <script type="module" src="firebase.js"></script>
-  <script type="module" src="login.js"></script>
-  <script type="module" src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
