@@ -1,4 +1,5 @@
-import { db } from './firebase.js';
+// script.js
+import { db, auth } from './firebase.js';
 import {
   collection,
   addDoc,
@@ -8,7 +9,17 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* DOM */
+import {
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+/* -----------------------
+   DOM ELEMENTS
+   ----------------------- */
 const form = document.getElementById('pedidoForm');
 const pedidosContainer = document.getElementById('pedidosContainer');
 const entregaSelect = document.getElementById('entrega');
@@ -19,13 +30,36 @@ const formTitle = document.getElementById('formTitle');
 const ordenarSelect = document.getElementById('ordenarHorario');
 const navegacaoDiasContainer = document.getElementById('navegacaoDiasContainer');
 
+const authOverlay = document.getElementById('authOverlay');
+const loginForm = document.getElementById('loginForm');
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
+const setupForm = document.getElementById('setupForm');
+const setupEmail = document.getElementById('setupEmail');
+const setupPassword = document.getElementById('setupPassword');
+const setupConfirm = document.getElementById('setupConfirm');
+const recoverForm = document.getElementById('recoverForm');
+const recoverEmail = document.getElementById('recoverEmail');
+
+const switchToSetup = document.getElementById('switchToSetup');
+const switchToRecover = document.getElementById('switchToRecover');
+const cancelSetup = document.getElementById('cancelSetup');
+const cancelRecover = document.getElementById('cancelRecover');
+const authMsg = document.getElementById('authMsg');
+
+const appContainer = document.getElementById('appContainer');
+const logoutBtn = document.getElementById('logoutBtn');
+
 let editId = null;
 const pedidosColRef = collection(db, "pedidos");
 
-/* Helpers */
+/* -----------------------
+   UTIL HELPERS
+   ----------------------- */
 function logAndAlertError(err, where = '') {
   console.error(`Erro${where ? ' em ' + where : ''}:`, err);
-  alert('Ocorreu um erro (veja console).');
+  // não usar alert em produção, aqui é só feedback dev
+  authMsg && (authMsg.textContent = 'Erro: ' + (err.message || err.code || err));
 }
 
 function safeString(value) {
@@ -56,7 +90,9 @@ function formatarDataParaExibicao(dataString) {
     });
 }
 
-/* Gerenciamento do Formulário */
+/* -----------------------
+   FORM CONTROL
+   ----------------------- */
 function resetForm() {
     form.reset();
     enderecoContainer.style.display = 'none';
@@ -76,37 +112,96 @@ entregaSelect.addEventListener('change', () => {
   enderecoContainer.style.display = entregaSelect.value === 'Sim' ? 'block' : 'none';
 });
 
-/* Submit (Adicionar / Atualizar) */
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+/* -----------------------
+   AUTH UI HANDLERS
+   ----------------------- */
+switchToSetup.addEventListener('click', () => {
+  loginForm.style.display = 'none';
+  recoverForm.style.display = 'none';
+  setupForm.style.display = 'block';
+  authMsg.textContent = '';
+});
 
-  const pedido = {
-    nome: safeString(document.getElementById('nome').value).trim(),
-    data: document.getElementById('data').value || '',
-    numero: safeString(document.getElementById('numero').value).trim(),
-    pagamento: safeString(document.getElementById('pagamento').value),
-    entrega: safeString(document.getElementById('entrega').value),
-    endereco: safeString(document.getElementById('endereco').value).trim(),
-    itens: safeString(document.getElementById('itens').value).trim(),
-    valor: (() => {
-      const v = parseFloat(document.getElementById('valor').value);
-      return Number.isFinite(v) ? v : 0;
-    })(),
-    horario: document.getElementById('horario').value || '',
-    pago: safeString(document.getElementById('pago').value)
-  };
+switchToRecover.addEventListener('click', () => {
+  loginForm.style.display = 'none';
+  setupForm.style.display = 'none';
+  recoverForm.style.display = 'block';
+  authMsg.textContent = '';
+});
+
+cancelSetup.addEventListener('click', () => {
+  setupForm.style.display = 'none';
+  loginForm.style.display = 'block';
+  authMsg.textContent = '';
+});
+
+cancelRecover.addEventListener('click', () => {
+  recoverForm.style.display = 'none';
+  loginForm.style.display = 'block';
+  authMsg.textContent = '';
+});
+
+/* criar conta (setup) */
+setupForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = (setupEmail.value || '').trim();
+  const pwd = (setupPassword.value || '').trim();
+  const confirm = (setupConfirm.value || '').trim();
+
+  if (!email) { authMsg.textContent = 'Preencha o email.'; return; }
+  if (pwd.length < 6) { authMsg.textContent = 'Senha mínima: 6 caracteres.'; return; }
+  if (pwd !== confirm) { authMsg.textContent = 'As senhas não conferem.'; return; }
 
   try {
-    if (editId) {
-      await updateDoc(doc(db, "pedidos", editId), pedido);
-    } else {
-      await addDoc(pedidosColRef, pedido);
-    }
-    resetForm();
+    await createUserWithEmailAndPassword(auth, email, pwd);
+    authMsg.textContent = 'Conta criada! Você será logado automaticamente.';
+    // onAuthStateChanged cuidará do resto
   } catch (err) {
-    logAndAlertError(err, 'salvar pedido');
+    logAndAlertError(err, 'criar conta');
   }
 });
+
+/* login */
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = (loginEmail.value || '').trim();
+  const pwd = (loginPassword.value || '').trim();
+  if (!email || !pwd) { authMsg.textContent = 'Preencha email e senha.'; return; }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, pwd);
+    authMsg.textContent = '';
+  } catch (err) {
+    logAndAlertError(err, 'login');
+  }
+});
+
+/* recuperar senha */
+recoverForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = (recoverEmail.value || '').trim();
+  if (!email) { authMsg.textContent = 'Digite o email para recuperar.'; return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    authMsg.textContent = 'Link de recuperação enviado (verifique seu email).';
+  } catch (err) {
+    logAndAlertError(err, 'recuperar senha');
+  }
+});
+
+/* logout */
+logoutBtn.addEventListener('click', async () => {
+  try {
+    await signOut(auth);
+    // onAuthStateChanged cuidará de esconder o app
+  } catch (err) {
+    logAndAlertError(err, 'logout');
+  }
+});
+
+/* -----------------------
+   CRUD e Impressão (mantive seu código, com leves ajustes)
+   ----------------------- */
 
 /* impressão */
 function printReceipt(docSnap) {
@@ -258,7 +353,10 @@ function criarCard(docSnap) {
   return card;
 }
 
-/* Lógica de Renderização e Ordenação */
+/* -----------------------
+   RENDER & ORDENAÇÃO
+   ----------------------- */
+
 let pedidosCache = [];
 
 function renderPedidos() {
@@ -331,10 +429,76 @@ function renderPedidos() {
 
 ordenarSelect.addEventListener('change', renderPedidos);
 
-/* snapshot em tempo real */
-onSnapshot(pedidosColRef, (snapshot) => {
-  pedidosCache = snapshot.docs;
-  renderPedidos();
-}, (err) => {
-  logAndAlertError(err, 'carregar pedidos (onSnapshot)');
+/* -----------------------
+   SUBMIT (ADD / UPDATE)
+   ----------------------- */
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const pedido = {
+    nome: safeString(document.getElementById('nome').value).trim(),
+    data: document.getElementById('data').value || '',
+    numero: safeString(document.getElementById('numero').value).trim(),
+    pagamento: safeString(document.getElementById('pagamento').value),
+    entrega: safeString(document.getElementById('entrega').value),
+    endereco: safeString(document.getElementById('endereco').value).trim(),
+    itens: safeString(document.getElementById('itens').value).trim(),
+    valor: (() => {
+      const v = parseFloat(document.getElementById('valor').value);
+      return Number.isFinite(v) ? v : 0;
+    })(),
+    horario: document.getElementById('horario').value || '',
+    pago: safeString(document.getElementById('pago').value)
+  };
+
+  try {
+    if (editId) {
+      await updateDoc(doc(db, "pedidos", editId), pedido);
+    } else {
+      await addDoc(pedidosColRef, pedido);
+    }
+    resetForm();
+  } catch (err) {
+    logAndAlertError(err, 'salvar pedido');
+  }
+});
+
+/* -----------------------
+   AUTH + SNAPSHOT CONTROL
+   ----------------------- */
+
+let unsubscribePedidosSnapshot = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // usuário autenticado
+    authOverlay.style.display = 'none';
+    appContainer.style.display = 'block';
+
+    // iniciar listener se ainda não foi iniciado
+    if (!unsubscribePedidosSnapshot) {
+      unsubscribePedidosSnapshot = onSnapshot(pedidosColRef, (snapshot) => {
+        pedidosCache = snapshot.docs;
+        renderPedidos();
+      }, (err) => {
+        logAndAlertError(err, 'carregar pedidos (onSnapshot)');
+      });
+    }
+  } else {
+    // sem usuário autenticado
+    appContainer.style.display = 'none';
+    authOverlay.style.display = 'flex';
+    // limpar forma de login
+    loginForm.reset();
+    setupForm.reset();
+    recoverForm.reset();
+    authMsg.textContent = '';
+
+    if (unsubscribePedidosSnapshot) {
+      unsubscribePedidosSnapshot(); // remove listener do firestore
+      unsubscribePedidosSnapshot = null;
+      pedidosCache = [];
+      renderPedidos(); // atualiza UI (vazia)
+    }
+  }
 });

@@ -1,14 +1,75 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Controle de Pedidos - DuCheffton</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Controle de Pedidos</h1>
+  <!-- AUTH OVERLAY -->
+  <div id="authOverlay" class="auth-overlay" aria-hidden="false">
+    <div class="auth-box" role="dialog" aria-labelledby="authTitle">
+      <h2 id="authTitle">Acesso — DuCheffton</h2>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" class="auth-form">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" placeholder="seu@email.com" required>
+
+        <label for="loginPassword">Senha</label>
+        <input type="password" id="loginPassword" placeholder="sua senha" required>
+
+        <div class="auth-actions">
+          <button type="submit" id="loginBtn">Entrar</button>
+        </div>
+
+        <div class="auth-footer">
+          <button type="button" id="switchToSetup" class="linkish">Primeiro acesso? Criar conta</button>
+          <button type="button" id="switchToRecover" class="linkish">Esqueci a senha</button>
+        </div>
+      </form>
+
+      <!-- SETUP FORM (criar conta) -->
+      <form id="setupForm" class="auth-form" style="display:none;">
+        <label for="setupEmail">Email</label>
+        <input type="email" id="setupEmail" placeholder="seu@email.com" required>
+
+        <label for="setupPassword">Senha (mín. 6)</label>
+        <input type="password" id="setupPassword" placeholder="nova senha" required>
+
+        <label for="setupConfirm">Confirmar senha</label>
+        <input type="password" id="setupConfirm" placeholder="confirme a senha" required>
+
+        <div class="auth-actions">
+          <button type="submit" id="setupBtn">Criar Conta</button>
+          <button type="button" id="cancelSetup">Cancelar</button>
+        </div>
+      </form>
+
+      <!-- RECOVER FORM (recuperar senha) -->
+      <form id="recoverForm" class="auth-form" style="display:none;">
+        <label for="recoverEmail">Email para recuperação</label>
+        <input type="email" id="recoverEmail" placeholder="seu@email.com" required>
+
+        <div class="auth-actions">
+          <button type="submit" id="recoverBtn">Enviar link</button>
+          <button type="button" id="cancelRecover">Cancelar</button>
+        </div>
+      </form>
+
+      <div id="authMsg" class="auth-msg" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- APP (escondido até autenticação) -->
+  <div class="container" id="appContainer" style="display:none;">
+    <div class="topbar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <h1>Controle de Pedidos</h1>
+      <div>
+        <button id="logoutBtn" class="btnAdd" title="Sair">Sair</button>
+      </div>
+    </div>
 
     <div class="form-section">
       <h2 id="formTitle">Adicionar Novo Pedido</h2>
@@ -54,7 +115,7 @@
           <option value="Não">Não</option>
           <option value="Sim">Sim</option>
         </select>
-        
+
         <div class="form-actions">
             <button type="submit" id="submitBtn">Adicionar Pedido</button>
             <button type="button" id="cancelBtn" style="display: none;">Cancelar Edição</button>
@@ -63,9 +124,8 @@
     </div>
 
     <h1 style="margin-top: 2rem;">Pedidos Registrados</h1>
-    
-    <div id="navegacaoDiasContainer" class="navegacaoDias">
-      </div>
+
+    <div id="navegacaoDiasContainer" class="navegacaoDias"></div>
 
     <div class="filtros">
       <label for="ordenarHorario">Ordenar por horário (dentro de cada dia):</label>
