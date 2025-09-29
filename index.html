@@ -3,81 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Pedidos - DuCheffton</title>
+  <title>Sistema de Pedidos</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Controle de Pedidos</h1>
+  <header>
+    <h1>Sistema de Pedidos</h1>
+  </header>
 
-    <div class="form-section">
-      <h2 id="formTitle">Adicionar Novo Pedido</h2>
-      <form id="pedidoForm">
-        <label>Nome do Cliente</label>
-        <input type="text" id="nome" required>
+  <main>
+    <!-- Formulário de Novo Pedido -->
+    <section id="form-section">
+      <h2>Adicionar Pedido</h2>
+      <form id="pedido-form">
+        <div class="form-group">
+          <label for="nome">Nome do Cliente:</label>
+          <input type="text" id="nome" required>
+        </div>
 
-        <label>Data</label>
-        <input type="date" id="data" required>
+        <div class="form-group">
+          <label for="data">Data:</label>
+          <input type="date" id="data" required>
+        </div>
 
-        <label>Número do Cliente</label>
-        <input type="text" id="numero">
+        <div class="form-group">
+          <label for="numero">Número do Cliente (opcional):</label>
+          <input type="text" id="numero">
+        </div>
 
-        <label>Forma de Pagamento</label>
-        <select id="pagamento" required>
-          <option value="Dinheiro">Dinheiro</option>
-          <option value="Cartão">Cartão</option>
-          <option value="Pix">Pix</option>
-        </select>
+        <div class="form-group">
+          <label for="pagamento">Forma de Pagamento:</label>
+          <select id="pagamento" required>
+            <option value="">Selecione...</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="pix">PIX</option>
+            <option value="cartao">Cartão</option>
+          </select>
+        </div>
 
-        <label>Entrega?</label>
-        <select id="entrega" required>
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
+        <div class="form-group">
+          <label>Entrega:</label>
+          <div>
+            <input type="radio" name="entrega" value="sim" id="entregar" checked>
+            <label for="entregar">Entregar</label>
 
-        <div id="enderecoContainer" style="display:none;">
-          <label>Endereço</label>
+            <input type="radio" name="entrega" value="nao" id="retirar">
+            <label for="retirar">Retirar</label>
+          </div>
+        </div>
+
+        <div class="form-group" id="endereco-group">
+          <label for="endereco">Endereço (caso entrega):</label>
           <input type="text" id="endereco">
         </div>
 
-        <label>Itens do Pedido</label>
-        <textarea id="itens" required></textarea>
-
-        <label>Valor Total (R$)</label>
-        <input type="number" id="valor" step="0.01" required>
-
-        <label>Horário</label>
-        <input type="time" id="horario" required>
-
-        <label>Pago?</label>
-        <select id="pago" required>
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
-        
-        <div class="form-actions">
-            <button type="submit" id="submitBtn">Adicionar Pedido</button>
-            <button type="button" id="cancelBtn" style="display: none;">Cancelar Edição</button>
-        </div>
+        <button type="submit">Adicionar Pedido</button>
       </form>
-    </div>
+    </section>
 
-    <h1 style="margin-top: 2rem;">Pedidos Registrados</h1>
-    
-    <div id="navegacaoDiasContainer" class="navegacaoDias">
-      </div>
+    <!-- Lista de Pedidos -->
+    <section id="lista-section">
+      <h2>Pedidos Cadastrados</h2>
+      <ul id="lista-pedidos"></ul>
+    </section>
+  </main>
 
-    <div class="filtros">
-      <label for="ordenarHorario">Ordenar por horário (dentro de cada dia):</label>
-      <select id="ordenarHorario">
-        <option value="asc">Crescente</option>
-        <option value="desc">Decrescente</option>
-      </select>
-    </div>
+  <footer>
+    <p>&copy; 2025 - Sistema de Pedidos</p>
+  </footer>
 
-    <div id="pedidosContainer" class="pedidosContainerGeral"></div>
-  </div>
-
-  <script type="module" src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

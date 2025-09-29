@@ -1,3 +1,4 @@
+// script.js
 import { db } from './firebase.js';
 import {
   collection,
@@ -8,19 +9,26 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* DOM */
-const form = document.getElementById('pedidoForm');
-const pedidosContainer = document.getElementById('pedidosContainer');
-const entregaSelect = document.getElementById('entrega');
-const enderecoContainer = document.getElementById('enderecoContainer');
-const submitBtn = document.getElementById('submitBtn');
+/* DOM (com fallbacks pra evitar nulls se tiver diferença no HTML) */
+const form = document.getElementById('pedidoForm') || document.getElementById('pedido-form') || document.querySelector('form');
+const pedidosContainer = document.getElementById('pedidosContainer') || document.querySelector('.pedidosContainer') || document.querySelector('.pedidosContainerGeral');
+const entregaSelect = document.getElementById('entrega') || document.querySelector('[name="entrega"]');
+const enderecoContainer = document.getElementById('enderecoContainer') || document.getElementById('endereco-group');
+const submitBtn = document.getElementById('submitBtn') || document.querySelector('button[type="submit"]');
 const cancelBtn = document.getElementById('cancelBtn');
-const formTitle = document.getElementById('formTitle');
-const ordenarSelect = document.getElementById('ordenarHorario');
-const navegacaoDiasContainer = document.getElementById('navegacaoDiasContainer');
+const formTitle = document.getElementById('formTitle') || document.querySelector('.form-section h2');
+const ordenarSelect = document.getElementById('ordenarHorario') || document.getElementById('ordenar-horario');
+const navegacaoDiasContainer = document.getElementById('navegacaoDiasContainer') || document.querySelector('.navegacaoDias');
+
+if (!form || !pedidosContainer) {
+  console.error('Elemento form ou pedidosContainer não encontrados. Verifique os IDs/classes no HTML.');
+  // não throw pra evitar quebrar o restante, mas não prossegue com listeners se não tiver form
+}
+
+/* referência collection */
+const pedidosColRef = collection(db, "pedidos");
 
 let editId = null;
-const pedidosColRef = collection(db, "pedidos");
 
 /* Helpers */
 function logAndAlertError(err, where = '') {
@@ -41,79 +49,126 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
-function formatarDataParaExibicao(dataString) {
-    if (!dataString || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
-        return "Sem Data";
-    }
-    const [ano, mes, dia] = dataString.split('-');
-    const dataObj = new Date(ano, mes - 1, dia);
+/* aceita string 'YYYY-MM-DD', Date, Firestore Timestamp (obj com toDate) */
+function toISODateString(dataInput) {
+  if (!dataInput) return '';
+  // se já é 'YYYY-MM-DD'
+  if (typeof dataInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dataInput)) return dataInput;
+  // firestore Timestamp
+  if (dataInput && typeof dataInput.toDate === 'function') {
+    const d = dataInput.toDate();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  if (dataInput instanceof Date) {
+    const yyyy = dataInput.getFullYear();
+    const mm = String(dataInput.getMonth() + 1).padStart(2, '0');
+    const dd = String(dataInput.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  // tenta extrair de string qualquer
+  const m = String(dataInput).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  return '';
+}
+
+function formatarDataParaExibicao(dataInput) {
+  const iso = toISODateString(dataInput);
+  if (!iso) return "Sem Data";
+  const [ano, mes, dia] = iso.split('-');
+  const dataObj = new Date(Number(ano), Number(mes) - 1, Number(dia));
+  try {
     return dataObj.toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'UTC'
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
+  } catch (e) {
+    return `${dia}/${mes}/${ano}`;
+  }
 }
 
 /* Gerenciamento do Formulário */
 function resetForm() {
-    form.reset();
-    enderecoContainer.style.display = 'none';
-    editId = null;
-    submitBtn.textContent = 'Adicionar Pedido';
-    formTitle.textContent = 'Adicionar Novo Pedido';
-    cancelBtn.style.display = 'none';
+  if (!form) return;
+  form.reset();
+  if (enderecoContainer) enderecoContainer.style.display = 'none';
+  editId = null;
+  if (submitBtn) submitBtn.textContent = 'Adicionar Pedido';
+  if (formTitle) formTitle.textContent = 'Adicionar Novo Pedido';
+  if (cancelBtn) cancelBtn.style.display = 'none';
 }
 
-cancelBtn.addEventListener('click', () => {
+if (cancelBtn) {
+  cancelBtn.addEventListener('click', () => {
     if (confirm('Tem certeza que deseja cancelar a edição? As alterações serão perdidas.')) {
-        resetForm();
+      resetForm();
     }
-});
+  });
+}
 
-entregaSelect.addEventListener('change', () => {
-  enderecoContainer.style.display = entregaSelect.value === 'Sim' ? 'block' : 'none';
-});
+/* Se entregaSelect for um <select> ou radio */
+if (entregaSelect) {
+  // caso seja <select>
+  entregaSelect.addEventListener && entregaSelect.addEventListener('change', () => {
+    if (enderecoContainer) enderecoContainer.style.display = (entregaSelect.value === 'Sim' || entregaSelect.value === 'sim' || entregaSelect.value === 'true') ? 'block' : 'none';
+  });
+}
 
 /* Submit (Adicionar / Atualizar) */
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+if (form) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  const pedido = {
-    nome: safeString(document.getElementById('nome').value).trim(),
-    data: document.getElementById('data').value || '',
-    numero: safeString(document.getElementById('numero').value).trim(),
-    pagamento: safeString(document.getElementById('pagamento').value),
-    entrega: safeString(document.getElementById('entrega').value),
-    endereco: safeString(document.getElementById('endereco').value).trim(),
-    itens: safeString(document.getElementById('itens').value).trim(),
-    valor: (() => {
-      const v = parseFloat(document.getElementById('valor').value);
-      return Number.isFinite(v) ? v : 0;
-    })(),
-    horario: document.getElementById('horario').value || '',
-    pago: safeString(document.getElementById('pago').value)
-  };
+    const nomeField = document.getElementById('nome');
+    const dataField = document.getElementById('data');
+    const numeroField = document.getElementById('numero');
+    const pagamentoField = document.getElementById('pagamento');
+    const entregaField = document.getElementById('entrega');
+    const enderecoField = document.getElementById('endereco');
+    const itensField = document.getElementById('itens');
+    const valorField = document.getElementById('valor');
+    const horarioField = document.getElementById('horario');
+    const pagoField = document.getElementById('pago');
 
-  try {
-    if (editId) {
-      await updateDoc(doc(db, "pedidos", editId), pedido);
-    } else {
-      await addDoc(pedidosColRef, pedido);
+    const pedido = {
+      nome: safeString(nomeField ? nomeField.value : ''),
+      data: (dataField && dataField.value) ? dataField.value : '',
+      numero: safeString(numeroField ? numeroField.value : ''),
+      pagamento: safeString(pagamentoField ? pagamentoField.value : ''),
+      entrega: safeString(entregaField ? entregaField.value : (entregaSelect && entregaSelect.checked ? 'Sim' : 'Não')),
+      endereco: safeString(enderecoField ? enderecoField.value : ''),
+      itens: safeString(itensField ? itensField.value : ''),
+      valor: (() => {
+        const v = valorField ? parseFloat(valorField.value) : NaN;
+        return Number.isFinite(v) ? v : 0;
+      })(),
+      horario: horarioField ? horarioField.value : '',
+      pago: safeString(pagoField ? pagoField.value : '')
+    };
+
+    try {
+      if (editId) {
+        await updateDoc(doc(db, "pedidos", editId), pedido);
+      } else {
+        await addDoc(pedidosColRef, pedido);
+      }
+      resetForm();
+    } catch (err) {
+      logAndAlertError(err, 'salvar pedido');
     }
-    resetForm();
-  } catch (err) {
-    logAndAlertError(err, 'salvar pedido');
-  }
-});
+  });
+}
 
-/* impressão */
+/* impressão (usa formatarDataParaExibicao para mostrar a data bonitinha) */
 function printReceipt(docSnap) {
-  const raw = docSnap.data() || {};
+  const raw = (typeof docSnap.data === 'function') ? docSnap.data() : (docSnap || {});
   const p = {
     nome: raw.nome || '',
-    data: raw.data || '',
+    data: formatarDataParaExibicao(raw.data),
     horario: raw.horario || '',
     itens: raw.itens || '',
     valor: (Number.isFinite(Number(raw.valor)) ? Number(raw.valor) : 0).toFixed(2),
@@ -181,10 +236,10 @@ function printReceipt(docSnap) {
 
 /* criar card */
 function criarCard(docSnap) {
-  const raw = docSnap.data() || {};
+  const raw = (typeof docSnap.data === 'function') ? docSnap.data() : (docSnap || {});
   const p = {
     nome: safeString(raw.nome) || '—',
-    data: safeString(raw.data) || '—',
+    data: toISODateString(raw.data) || '—',
     horario: safeString(raw.horario) || '—',
     itens: safeString(raw.itens) || '—',
     valor: (() => { const n = Number(raw.valor); return Number.isFinite(n) ? n : 0; })(),
@@ -211,23 +266,27 @@ function criarCard(docSnap) {
   btnEditar.className = 'btnEditar';
   btnEditar.textContent = '✏️ Editar';
   btnEditar.addEventListener('click', () => {
-    document.getElementById('nome').value = raw.nome || '';
-    document.getElementById('data').value = raw.data || '';
-    document.getElementById('numero').value = raw.numero || '';
-    document.getElementById('pagamento').value = raw.pagamento || '';
-    document.getElementById('entrega').value = raw.entrega || 'Não';
-    document.getElementById('endereco').value = raw.endereco || '';
-    document.getElementById('itens').value = raw.itens || '';
-    document.getElementById('valor').value = raw.valor !== undefined ? raw.valor : '';
-    document.getElementById('horario').value = raw.horario || '';
-    document.getElementById('pago').value = raw.pago || '';
+    try {
+      if (document.getElementById('nome')) document.getElementById('nome').value = raw.nome || '';
+      if (document.getElementById('data')) document.getElementById('data').value = toISODateString(raw.data) || '';
+      if (document.getElementById('numero')) document.getElementById('numero').value = raw.numero || '';
+      if (document.getElementById('pagamento')) document.getElementById('pagamento').value = raw.pagamento || '';
+      if (document.getElementById('entrega')) document.getElementById('entrega').value = raw.entrega || 'Não';
+      if (document.getElementById('endereco')) document.getElementById('endereco').value = raw.endereco || '';
+      if (document.getElementById('itens')) document.getElementById('itens').value = raw.itens || '';
+      if (document.getElementById('valor')) document.getElementById('valor').value = raw.valor !== undefined ? raw.valor : '';
+      if (document.getElementById('horario')) document.getElementById('horario').value = raw.horario || '';
+      if (document.getElementById('pago')) document.getElementById('pago').value = raw.pago || '';
 
-    enderecoContainer.style.display = raw.entrega === 'Sim' ? 'block' : 'none';
-    editId = docSnap.id;
-    submitBtn.textContent = 'Atualizar Pedido';
-    formTitle.textContent = `Editando Pedido de ${raw.nome}`;
-    cancelBtn.style.display = 'inline-block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (enderecoContainer) enderecoContainer.style.display = raw.entrega === 'Sim' ? 'block' : 'none';
+      editId = docSnap.id;
+      if (submitBtn) submitBtn.textContent = 'Atualizar Pedido';
+      if (formTitle) formTitle.textContent = `Editando Pedido de ${raw.nome}`;
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      console.error('Erro ao preencher formulário para edição:', e);
+    }
   });
 
   /* Imprimir */
@@ -262,78 +321,84 @@ function criarCard(docSnap) {
 let pedidosCache = [];
 
 function renderPedidos() {
+  if (!pedidosContainer) return;
   pedidosContainer.innerHTML = '';
-  navegacaoDiasContainer.innerHTML = '';
+  if (navegacaoDiasContainer) navegacaoDiasContainer.innerHTML = '';
 
   const pedidosPorData = {};
   pedidosCache.forEach(docSnap => {
-    const data = docSnap.data().data || 'Sem Data';
-    if (!pedidosPorData[data]) {
-      pedidosPorData[data] = [];
-    }
-    pedidosPorData[data].push(docSnap);
+    const dRaw = (typeof docSnap.data === 'function') ? docSnap.data().data : docSnap.data && docSnap.data().data;
+    // tenta extrair com toISO ou '', se vazio usa 'Sem Data'
+    const key = toISODateString(dRaw) || 'Sem Data';
+    if (!pedidosPorData[key]) pedidosPorData[key] = [];
+    pedidosPorData[key].push(docSnap);
   });
 
+  // ordena datas (mais recentes primeiro)
   const datasOrdenadas = Object.keys(pedidosPorData).sort((a, b) => b.localeCompare(a));
-  
-  if (datasOrdenadas.length > 1) {
-    datasOrdenadas.forEach(data => {
-        const [ano, mes, dia] = data.split('-');
-        const dataFormatadaLink = `${dia}/${mes}`;
-        const linkId = `header-${data}`;
 
-        const link = document.createElement('a');
-        link.className = 'dia-link';
-        link.href = `#${linkId}`;
-        link.textContent = dataFormatadaLink;
-        navegacaoDiasContainer.appendChild(link);
+  // navegação por dias (apenas se >1 dia)
+  if (navegacaoDiasContainer && datasOrdenadas.length > 1) {
+    datasOrdenadas.forEach(data => {
+      if (data === 'Sem Data') return;
+      const [ano, mes, dia] = data.split('-');
+      const dataFormatadaLink = `${dia}/${mes}`;
+      const linkId = `header-${data}`;
+
+      const link = document.createElement('a');
+      link.className = 'dia-link';
+      link.href = `#${linkId}`;
+      link.textContent = dataFormatadaLink;
+      navegacaoDiasContainer.appendChild(link);
     });
   }
 
   if (datasOrdenadas.length === 0) {
-      pedidosContainer.innerHTML = '<p style="text-align:center; color:#888;">Nenhum pedido registrado ainda.</p>';
-      return;
+    pedidosContainer.innerHTML = '<p style="text-align:center; color:#888;">Nenhum pedido registrado ainda.</p>';
+    return;
   }
 
   datasOrdenadas.forEach(data => {
-    if (pedidosPorData[data] && pedidosPorData[data].length > 0) {
-      const headerId = `header-${data}`;
-      const header = document.createElement('h2');
-      header.className = 'data-header';
-      header.id = headerId;
-      header.textContent = formatarDataParaExibicao(data);
-      pedidosContainer.appendChild(header);
+    const listaDocs = pedidosPorData[data];
+    if (!listaDocs || listaDocs.length === 0) return;
 
-      const diaContainer = document.createElement('div');
-      diaContainer.className = 'pedidosContainer';
-      pedidosContainer.appendChild(diaContainer);
+    const headerId = `header-${data}`;
+    const header = document.createElement('h2');
+    header.className = 'data-header';
+    header.id = headerId;
+    header.textContent = (data === 'Sem Data') ? 'Sem Data' : formatarDataParaExibicao(data);
+    pedidosContainer.appendChild(header);
 
-      const ordem = ordenarSelect.value;
-      const pedidosDoDiaOrdenados = [...pedidosPorData[data]].sort((a, b) => {
-        const horaA = a.data().horario || '';
-        const horaB = b.data().horario || '';
-        if (!horaA) return 1;
-        if (!horaB) return -1;
-        return ordem === 'asc' ? horaA.localeCompare(horaB) : horaB.localeCompare(horaA);
-      });
+    // container dos cards do dia (usa a mesma classe que o CSS espera)
+    const diaContainer = document.createElement('div');
+    diaContainer.className = 'pedidosContainer';
+    pedidosContainer.appendChild(diaContainer);
 
-      pedidosDoDiaOrdenados.forEach(docSnap => {
-        try {
-          const card = criarCard(docSnap);
-          diaContainer.appendChild(card);
-        } catch (e) {
-          console.error('Erro ao renderizar doc', docSnap.id, e);
-        }
-      });
-    }
+    const ordem = (ordenarSelect && ordenarSelect.value) ? ordenarSelect.value : 'asc';
+    const pedidosDoDiaOrdenados = [...listaDocs].sort((a, b) => {
+      const horaA = (typeof a.data === 'function' ? a.data().horario : (a.data && a.data().horario)) || '';
+      const horaB = (typeof b.data === 'function' ? b.data().horario : (b.data && b.data().horario)) || '';
+      if (!horaA) return 1;
+      if (!horaB) return -1;
+      return ordem === 'asc' ? horaA.localeCompare(horaB) : horaB.localeCompare(horaA);
+    });
+
+    pedidosDoDiaOrdenados.forEach(docSnap => {
+      try {
+        const card = criarCard(docSnap);
+        diaContainer.appendChild(card);
+      } catch (e) {
+        console.error('Erro ao renderizar doc', docSnap.id, e);
+      }
+    });
   });
 }
 
-ordenarSelect.addEventListener('change', renderPedidos);
+if (ordenarSelect) ordenarSelect.addEventListener('change', renderPedidos);
 
 /* snapshot em tempo real */
 onSnapshot(pedidosColRef, (snapshot) => {
-  pedidosCache = snapshot.docs;
+  pedidosCache = snapshot.docs || [];
   renderPedidos();
 }, (err) => {
   logAndAlertError(err, 'carregar pedidos (onSnapshot)');

@@ -8,7 +8,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyB2pPpPVRmcKC8D4clCL73PSyuwVUN8wpY",
   authDomain: "ducheffton-pedidos.firebaseapp.com",
   projectId: "ducheffton-pedidos",
-  storageBucket: "ducheffton-pedidos.appspot.com", // corrigi para o padrão .appspot.com que é o mais comum
+  storageBucket: "ducheffton-pedidos.appspot.com", // corrigido para o padrão .appspot.com
   messagingSenderId: "2379935099",
   appId: "1:2379935099:web:e5131fb3c7beeb9d59a1de"
 };

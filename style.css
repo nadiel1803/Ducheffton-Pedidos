@@ -1,3 +1,8 @@
+/* ===========================
+   DuCheffton — Tema Laranja/Branco/Vermelho
+   Mantive todas as classes antigas e adicionei ajustes
+   =========================== */
+
 /* Reset */
 * {
   margin: 0;
@@ -10,9 +15,22 @@ html {
   scroll-behavior: smooth;
 }
 
+:root{
+  --bg: #ffffff;        /* fundo branco */
+  --surface: #fff6f1;   /* card / surface com leve tom laranja */
+  --muted: #f3ebe7;     /* tom suave para inputs */
+  --text: #1f2937;      /* texto escuro pra contraste */
+  --accent: #f97316;    /* laranja primary */
+  --accent-2: #ea580c;  /* laranja mais escuro (hover) */
+  --danger: #ef4444;    /* vermelho */
+  --muted-dark: #e5e7eb;/* borda clara */
+  --card-shadow: rgba(0,0,0,0.08);
+}
+
+/* Body / Layout */
 body {
-  background: #121212;
-  color: #f5f5f5;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -20,31 +38,36 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1000px;
   width: 100%;
 }
 
+/* Cabeçalho */
 h1 {
   text-align: center;
   margin-bottom: 1rem;
-  color: #4cc9f0;
+  color: var(--accent);
+  font-size: 1.75rem;
+  letter-spacing: 0.2px;
 }
 
+/* botão genérico de adicionar (se usar) */
 .btnAdd {
   display: block;
   margin: 0 auto 1.5rem;
   padding: 0.6rem 1.2rem;
-  background: #4cc9f0;
-  color: #121212;
+  background: var(--accent);
+  color: #fff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
-  transition: 0.3s;
+  transition: 0.2s;
+  box-shadow: 0 6px 18px rgba(249,115,22,0.12);
 }
-
 .btnAdd:hover {
-  background: #38a3c9;
+  background: var(--accent-2);
+  transform: translateY(-2px);
 }
 
 /* Filtro de ordenação */
@@ -54,95 +77,106 @@ h1 {
   align-items: center;
   gap: 0.6rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .filtros label {
   font-size: 0.95rem;
-  color: #cde9ff;
+  color: #7a5840;
 }
 
 .filtros select {
   padding: 0.5rem 0.8rem;
   border-radius: 8px;
-  border: none;
-  background: #1f2326;
-  color: #fff;
+  border: 1px solid var(--muted-dark);
+  background: var(--muted);
+  color: var(--text);
   font-size: 0.95rem;
 }
 
-/* Cards */
-.pedidosContainer {
+/* Cards layout (aceita ambas classes) */
+.pedidosContainer,
+.pedidosContainerGeral {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
 }
 
+/* Card individual */
 .cardPedido {
-  background: #1e1e1e;
+  background: var(--surface);
   padding: 1rem;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-  transition: transform 0.2s;
+  box-shadow: 0 6px 18px var(--card-shadow);
+  transition: transform 0.18s, box-shadow 0.18s;
+  border-left: 6px solid var(--accent);
 }
 
 .cardPedido:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.12);
 }
 
 .cardPedido h3 {
   margin-bottom: 0.5rem;
-  color: #ffd166;
+  color: #7a2b00; /* marrom avermelhado pro nome */
+  font-size: 1.05rem;
 }
 
 .cardPedido p {
   margin-bottom: 0.3rem;
-  font-size: 0.9rem;
-  color: #ddd;
+  font-size: 0.92rem;
+  color: #4b3b34;
 }
 
+/* Ações (editar / imprimir / excluir) */
 .actions {
   margin-top: 0.8rem;
   display: flex;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .actions button {
   flex: 1;
-  padding: 0.4rem;
+  padding: 0.45rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.8rem;
-  transition: 0.2s;
+  font-size: 0.85rem;
+  transition: 0.14s;
+  font-weight: 700;
 }
 
-.btnEditar { background: #06d6a0; color: #121212; }
-.btnImprimir { background: #118ab2; color: #fff; }
-.btnExcluir { background: #ef476f; color: #fff; }
+/* estilos de cada botão */
+.btnEditar { background: #ffedd5; color: #7a2b00; border: 1px solid #ffd7b5; }
+.btnEditar:hover { background: #ffd7b5; transform: translateY(-2px); }
 
-.btnEditar:hover { background: #05b386; }
-.btnImprimir:hover { background: #0e6d8f; }
-.btnExcluir:hover { background: #d7375b; }
+.btnImprimir { background: #fff7ed; color: #92400e; border: 1px solid #fed7aa; }
+.btnImprimir:hover { background: #fed7aa; transform: translateY(-2px); }
 
-/* Modal Antigo - pode ser removido, mas não atrapalha */
+.btnExcluir { background: var(--danger); color: #fff; border: 1px solid darken(var(--danger), 5%); }
+.btnExcluir:hover { background: #dc2626; transform: translateY(-2px); }
+
+/* Modal Antigo (mantive) */
 .modal {
   display: none;
   position: fixed;
   z-index: 1000;
   left: 0; top: 0;
   width: 100%; height: 100%;
-  background-color: rgba(0,0,0,0.7);
+  background-color: rgba(0,0,0,0.45);
   justify-content: center;
   align-items: center;
 }
 
 .modal-content {
-  background: #1f2326;
+  background: #fff;
   padding: 1.5rem;
   border-radius: 12px;
   width: 95%;
-  max-width: 500px;
+  max-width: 560px;
   position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.12);
 }
 
 .close {
@@ -150,9 +184,10 @@ h1 {
   top: 10px; right: 15px;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #fff;
+  color: #333;
 }
 
+/* Form styles (mantive estrutura anterior mas adaptada ao tema) */
 form {
   display: flex;
   flex-direction: column;
@@ -160,10 +195,10 @@ form {
 
 form label {
   margin-top: 0.8rem;
-  margin-bottom: 0.3rem;
-  font-weight: bold;
-  font-size: 0.9rem;
-  color: #ddd;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #6b4a3a;
 }
 
 form input,
@@ -171,53 +206,66 @@ form textarea,
 form select {
   padding: 0.6rem;
   border-radius: 8px;
-  border: none;
-  background: #2c2c2c;
-  color: #fff;
+  border: 1px solid var(--muted-dark);
+  background: #fff;
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.02);
+  font-size: 0.95rem;
+}
+
+form input:focus,
+form textarea:focus,
+form select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(249,115,22,0.08);
 }
 
 form textarea {
-  min-height: 60px;
+  min-height: 80px;
   resize: vertical;
 }
 
+/* botões de form */
 form button {
   margin-top: 1rem;
   padding: 0.7rem;
-  background: #4cc9f0;
-  color: #121212;
+  background: var(--accent);
+  color: #fff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
-  transition: 0.3s;
+  transition: 0.18s;
+  box-shadow: 0 8px 20px rgba(249,115,22,0.12);
 }
 
 form button:hover {
-  background: #38a3c9;
+  background: var(--accent-2);
 }
 
-/* ======================================= */
-/* ====== NOVOS ESTILOS ADICIONADOS ====== */
-/* ======================================= */
-
+/* seção do form (caixa) */
 .form-section {
-  background: #1f2326;
+  background: var(--surface);
   padding: 1.5rem;
   border-radius: 12px;
   margin-bottom: 2rem;
+  border: 1px solid var(--muted-dark);
 }
 
+/* cabeçalho das datas (separador por dia) */
 .data-header {
   width: 100%;
   grid-column: 1 / -1; /* Ocupa toda a largura do grid */
   margin-top: 1rem;
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #4cc9f0;
-  color: #f5f5f5;
+  border-bottom: 3px solid var(--accent);
+  color: #7a2b00;
+  font-weight: 700;
 }
 
+/* ações do form (botões) */
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -225,13 +273,15 @@ form button:hover {
 }
 
 #cancelBtn {
-  background: #6c757d;
-  color: white;
+  background: #f3f4f6;
+  color: #7a2b00;
+  border: 1px solid var(--muted-dark);
 }
 #cancelBtn:hover {
-  background: #5a6268;
+  background: #efe6db;
 }
 
+/* Navegação por dias (strip de datas) */
 .navegacaoDias {
   display: flex;
   gap: 0.75rem;
@@ -239,36 +289,63 @@ form button:hover {
   margin-bottom: 1rem;
   overflow-x: auto; /* Permite rolar horizontalmente se houver muitos dias */
   scrollbar-width: thin;
-  scrollbar-color: #4cc9f0 #1f2326;
+  scrollbar-color: var(--accent) var(--muted);
 }
 
-/* Estiliza a barra de rolagem para navegadores Webkit (Chrome, Safari) */
+/* Estilos para Webkit */
 .navegacaoDias::-webkit-scrollbar {
   height: 8px;
 }
 .navegacaoDias::-webkit-scrollbar-track {
-  background: #1f2326;
-  border-radius: 4px;
+  background: var(--muted);
+  border-radius: 6px;
 }
 .navegacaoDias::-webkit-scrollbar-thumb {
-  background-color: #4cc9f0;
-  border-radius: 4px;
+  background-color: var(--accent);
+  border-radius: 6px;
 }
 
 .dia-link {
   display: inline-block;
   padding: 0.5rem 1rem;
-  background-color: #1f2326;
-  color: #f5f5f5;
-  border: 1px solid #4cc9f0;
+  background-color: #fff;
+  color: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: 8px;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 700;
   white-space: nowrap; /* Impede que a data quebre em duas linhas */
-  transition: background-color 0.3s, color 0.3s;
+  transition: background-color 0.2s, color 0.2s, transform 0.12s;
+}
+.dia-link:hover, .dia-link:focus {
+  background-color: var(--accent);
+  color: #fff;
+  transform: translateY(-2px);
 }
 
-.dia-link:hover, .dia-link:focus {
-  background-color: #4cc9f0;
-  color: #121212;
+/* Responsividade básica */
+@media (max-width: 900px) {
+  .container { padding: 0 1rem; }
+  .pedidosContainer,
+  .pedidosContainerGeral { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  body { padding: 1rem; }
+  h1 { font-size: 1.4rem; }
+  .pedidosContainer,
+  .pedidosContainerGeral { grid-template-columns: 1fr; }
+  .form-actions { flex-direction: column; }
+}
+
+/* pequenas utilities para texto e cores */
+.small { font-size: 0.85rem; color: #6b4a3a; }
+.center { text-align: center; }
+.right { text-align: right; }
+
+/* Compatibilidade com prints/recibos (caso use) */
+@media print {
+  body { background: #fff; color: #000; }
+  .cardPedido { box-shadow: none; border-left: 4px solid #ccc; }
+  .navegacaoDias, .filtros, .form-section { display: none; }
 }
